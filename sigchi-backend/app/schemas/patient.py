@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr , Field
 from typing import Optional
 
 
@@ -14,7 +14,7 @@ class PatientBase(BaseModel):
 
 class PatientCreate(PatientBase):
     username: str
-    password: str
+    password:  str = Field(min_length=8, max_length=72)
     full_name: str
     document_type: str
     document_number: str

@@ -17,8 +17,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    full_name = Column(String(255), nullable=False)
+    password_hash = Column(String(50), nullable=False)
+    full_name = Column(String(40), nullable=False)
     document_type = Column(String(20), nullable=False)
     document_number = Column(String(50), nullable=False, unique=True)
     email = Column(String(255), unique=True)
