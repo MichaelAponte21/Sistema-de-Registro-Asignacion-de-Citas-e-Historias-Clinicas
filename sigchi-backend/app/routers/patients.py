@@ -16,9 +16,12 @@ router = APIRouter(
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    if password is None:
+        raise ValueError("Password is required")
+
+    safe_password = password[:72]  # por si acaso
+    return pwd_context.hash(safe_password)
 
 
 @router.post("/", response_model=PatientOut, status_code=status.HTTP_201_CREATED)
