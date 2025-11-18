@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoginUsuario from "./LoginUsuario";
+import LoginUsuario from "./paginas/LoginUsuario.jsx";
 import LoginMedico from "./paginas/medico/LoginMedico";
 import MedicoRouter from "./routes/MedicoRouter";
 
