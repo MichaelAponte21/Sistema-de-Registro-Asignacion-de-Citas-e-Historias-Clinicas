@@ -1,16 +1,21 @@
 from fastapi import FastAPI
+from app.core.db.database import Base, engine
+from app.routers import users, auth, patients, doctors, appointments, clinical_histories
 
-from app.db.database import Base, engine
-from app.db import models
-from app.routers import health, patients
-
-# Crear tablas en la BD al iniciar (solo en desarrollo)
+# Esto asume que app.core.db.database ya importó app.models
 Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
-    title="SIGCHI - Sistema de Gestión de Citas e Historias Clínicas",
-    version="0.1.0"
+    title="SIGCHI Backend",
+    version="0.1.0",
 )
 
-app.include_router(health.router, prefix="/api")
-app.include_router(patients.router, prefix="/api")
+app.include_router(users.router)
+app.include_router(auth.router)
+
+app.include_router(patients.router)
+
+app.include_router(doctors.router)
+
+app.include_router(appointments.router)
+
+app.include_router(clinical_histories.router)

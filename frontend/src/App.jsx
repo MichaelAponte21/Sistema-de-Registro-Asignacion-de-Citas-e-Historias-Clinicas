@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// src/App.jsx
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LoginUsuario from "./LoginUsuario";
+import LoginMedico from "./paginas/medico/LoginMedico";
+import MedicoRouter from "./routes/MedicoRouter";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Protege rutas según token + rol
+function ProtectedRoute({ children, rol }) {
+  const token = localStorage.getItem("token");
+  const userRol = localStorage.getItem("rol");
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  if (!token) return <Navigate to="/" />;
+  if (rol && rol !== userRol) return <Navigate to="/" />;
+
+  return children;
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Login principal */}
+        <Route path="/" element={<LoginUsuario />} />
+
+        {/* Dashboard del médico */}
+        <Route
+          path="/medico"
+          element={
+            <ProtectedRoute rol="MEDICO">
+              <LoginMedico />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Subrutas del médico */}
+        <Route
+          path="/medico/*"
+          element={
+            <ProtectedRoute rol="MEDICO">
+              <MedicoRouter />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Cualquier ruta inválida */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
