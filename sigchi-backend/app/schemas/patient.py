@@ -1,46 +1,38 @@
+# app/schemas/patient.py
+
+from __future__ import annotations
+
 from datetime import date
-from pydantic import BaseModel, EmailStr , Field
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class PatientBase(BaseModel):
-    birth_date: Optional[date] = None
-    sex: Optional[str] = None
+    document_type: Optional[str] = None      # CC, TI, etc.
+    document_number: Optional[str] = None
+    phone: Optional[str] = None
     address: Optional[str] = None
-    emergency_contact: Optional[str] = None
-    personal_history: Optional[str] = None
-    family_history: Optional[str] = None
+    birth_date: Optional[date] = None
 
 
 class PatientCreate(PatientBase):
-    username: str
-    password:  str = Field(min_length=8, max_length=72)
-    full_name: str
-    document_type: str
-    document_number: str
-    email: EmailStr
-    phone: Optional[str] = None
+    # Asociamos el paciente a un usuario ya existente
+    user_id: int
 
 
 class PatientUpdate(PatientBase):
+    # Todos opcionales; se usa para updates parciales o completos
     pass
 
 
-class PatientUserInfo(BaseModel):
+class PatientResponse(PatientBase):
     id: int
-    full_name: str
-    document_type: str
-    document_number: str
-    email: EmailStr
-    phone: Optional[str] = None
+    user_id: int
 
-    class Config:
-        from_attributes = True  # Pydantic v2
+    # Si quieres exponer algo del User asociado:
+    # email: Optional[str] = None
+    # first_name: Optional[str] = None
+    # last_name: Optional[str] = None
 
-
-class PatientOut(PatientBase):
-    id: int
-    user: PatientUserInfo
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

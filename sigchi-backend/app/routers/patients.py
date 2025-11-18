@@ -1,111 +1,197 @@
+# app/routers/patients.py
+
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 
-from app.db.database import get_db
-from app.db import models
-from app.db.models import UserRole
-from app.schemas.patient import PatientCreate, PatientOut, PatientUpdate
+from app.core.db.database import get_db
+from app.core.db.models import User
+from app.core.security import (
+    require_roles,
+    get_current_patient_user,
+    get_current_active_user,
+)
+from app.schemas.patient import (
+    PatientCreate,
+    PatientUpdate,
+    PatientResponse,
+)
+from app.services import patient_service
+
 
 router = APIRouter(
-    prefix="/patients",
-    tags=["Patients"]
+    prefix="/api/patients",
+    tags=["Patients"],
 )
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_password_hash(password: str) -> str:
-    if password is None:
-        raise ValueError("Password is required")
+# --- Crear paciente (solo admin o doctor) ---
+@router.post(
+    "/",
+    response_model=PatientResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_patient(
+    patient_in: PatientCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["admin", "doctor"])),
+):
+    """
+    Crea un perfil de paciente asociado a un usuario existente.
+    Solo 'admin' y 'doctor' pueden crear pacientes.
+    """
 
-    safe_password = password[:72]  # por si acaso
-    return pwd_context.hash(safe_password)
-
-
-@router.post("/", response_model=PatientOut, status_code=status.HTTP_201_CREATED)
-def create_patient(payload: PatientCreate, db: Session = Depends(get_db)):
-    # Validar duplicados: username, documento, email
-    existing_user = db.query(models.User).filter(
-        (models.User.username == payload.username) |
-        (models.User.document_number == payload.document_number) |
-        (models.User.email == payload.email)
-    ).first()
-
-    if existing_user:
+    # Evitar duplicados por user_id
+    existing = patient_service.get_patient_by_user_id(db, patient_in.user_id)
+    if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un usuario con ese username, documento o email."
+            detail="This user already has a patient profile",
         )
 
-    user = models.User(
-        username=payload.username,
-        password_hash=get_password_hash(payload.password),
-        full_name=payload.full_name,
-        document_type=payload.document_type,
-        document_number=payload.document_number,
-        email=payload.email,
-        phone=payload.phone,
-        role=UserRole.PATIENT,
-        active=True
-    )
-
-    db.add(user)
-    db.flush()  # para obtener user.id sin hacer commit aún
-
-    patient = models.Patient(
-        user_id=user.id,
-        birth_date=payload.birth_date,
-        sex=payload.sex,
-        address=payload.address,
-        emergency_contact=payload.emergency_contact,
-        personal_history=payload.personal_history,
-        family_history=payload.family_history,
-    )
-
-    db.add(patient)
-    db.commit()
-    db.refresh(patient)
-
+    patient = patient_service.create_patient(db, patient_in)
     return patient
 
 
-@router.get("/", response_model=List[PatientOut])
-def list_patients(db: Session = Depends(get_db)):
-    patients = db.query(models.Patient).all()
+# --- Listar pacientes (solo admin; si quieres, puedes añadir 'doctor') ---
+@router.get(
+    "/",
+    response_model=List[PatientResponse],
+)
+def list_patients(
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["admin"])),
+):
+    """
+    Lista de pacientes con paginación básica.
+    Solo 'admin' (puedes agregar 'doctor' en require_roles si lo necesitas).
+    """
+    patients = patient_service.list_patients(db, skip=skip, limit=limit)
     return patients
 
 
-@router.get("/{patient_id}", response_model=PatientOut)
-def get_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+# --- Ver mi propio perfil de paciente (rol patient) ---
+@router.get(
+    "/me",
+    response_model=PatientResponse,
+)
+def get_my_patient_profile(
+    db: Session = Depends(get_db),
+    current_patient_user: User = Depends(get_current_patient_user),
+):
+    """
+    Devuelve el perfil de paciente asociado al usuario autenticado
+    con rol 'patient'.
+    """
+    patient = patient_service.get_patient_by_user_id(db, current_patient_user.id)
     if not patient:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient profile not found for this user",
+        )
     return patient
 
 
-@router.put("/{patient_id}", response_model=PatientOut)
-def update_patient(patient_id: int, payload: PatientUpdate, db: Session = Depends(get_db)):
-    patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+# --- Obtener paciente por id ---
+@router.get(
+    "/{patient_id}",
+    response_model=PatientResponse,
+)
+def get_patient_by_id(
+    patient_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Reglas:
+      - admin: puede ver cualquier paciente.
+      - doctor: puede ver cualquier paciente (más adelante podemos filtrar 'sus' pacientes).
+      - patient: solo puede ver su propio registro.
+    """
+    patient = patient_service.get_patient(db, patient_id)
     if not patient:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
 
-    # Actualizar solo los campos enviados
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(patient, field, value)
+    role = getattr(current_user, "role", None)
+    role_name = getattr(role, "name", None)
 
-    db.commit()
-    db.refresh(patient)
+    if role_name == "patient":
+        # El paciente solo se puede ver a sí mismo
+        if patient.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You cannot access another patient's data",
+            )
+
+    elif role_name in ("admin", "doctor"):
+        # Por ahora, admin/doctor pueden ver cualquier paciente.
+        # Más adelante, podemos restringir doctor a "sus" pacientes.
+        pass
+
+    else:
+        # Rol desconocido (por si acaso)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions",
+        )
+
     return patient
 
 
-@router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_patient(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+# --- Actualizar paciente (solo admin o doctor) ---
+@router.put(
+    "/{patient_id}",
+    response_model=PatientResponse,
+)
+def update_patient(
+    patient_id: int,
+    patient_in: PatientUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["admin", "doctor"])),
+):
+    """
+    Actualiza datos de un paciente.
+    Solo 'admin' o 'doctor'.
+    (En el futuro podemos agregar lógica para que el doctor solo
+    pueda modificar sus propios pacientes).
+    """
+    patient = patient_service.get_patient(db, patient_id)
     if not patient:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
 
-    db.delete(patient)
-    db.commit()
-    return
+    patient = patient_service.update_patient(db, patient, patient_in)
+    return patient
+
+
+# --- Eliminar paciente (solo admin) ---
+@router.delete(
+    "/{patient_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_patient(
+    patient_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["admin"])),
+):
+    """
+    Elimina un paciente (delete físico).
+    Solo 'admin'. Más adelante podrías cambiarlo a soft-delete.
+    """
+    patient = patient_service.get_patient(db, patient_id)
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+
+    patient_service.delete_patient(db, patient)
+    return None
