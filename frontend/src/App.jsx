@@ -1,8 +1,11 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoginUsuario from "./LoginUsuario";
+import LoginUsuario from "./paginas/LoginUsuario";
 import LoginMedico from "./paginas/medico/LoginMedico";
 import MedicoRouter from "./routes/MedicoRouter";
+import AgendarCitas from "./paginas/medico/AgendaCitas"
+import DatosPaciente from "./paginas/medico/DatosPaciente"
+import RegistrarConsulta from "./paginas/medico/RegistrarConsulta"
 
 // Protege rutas según token + rol
 function ProtectedRoute({ children, rol }) {
@@ -20,7 +23,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Login principal */}
-        <Route path="/" element={<LoginUsuario />} />
+        <Route path="/" element={<RegistrarConsulta />} />
 
         {/* Dashboard del médico */}
         <Route

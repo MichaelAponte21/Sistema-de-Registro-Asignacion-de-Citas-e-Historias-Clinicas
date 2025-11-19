@@ -1,11 +1,9 @@
-// src/pages/medico/RegistrarConsulta.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const RegistrarConsulta = () => {
   const navigate = useNavigate();
 
-  // Estado del formulario
   const [form, setForm] = useState({
     motivo: "",
     sintomas: "",
@@ -14,7 +12,6 @@ const RegistrarConsulta = () => {
     observaciones: "",
   });
 
-  // Manejar cambios en los inputs
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -22,131 +19,158 @@ const RegistrarConsulta = () => {
     });
   };
 
-  // Simulación de submit (más adelante lo conectamos al backend)
   const handleSubmit = (e) => {
     e.preventDefault();
 
     console.log("Consulta registrada:", form);
-
     alert("Consulta registrada correctamente (modo demo)");
 
-    // Regresa a DatosPaciente o a AgendarCitas
-    navigate("/medico/agendar-citas");
+    navigate("/medico/citas");
   };
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Registrar Consulta</h2>
+    <div style={styles.page}>
+      <div style={styles.card}>
 
-      <form style={styles.form} onSubmit={handleSubmit}>
-        <label style={styles.label}>Motivo de consulta:</label>
-        <textarea
-          name="motivo"
-          value={form.motivo}
-          onChange={handleChange}
-          required
-          style={styles.textarea}
-        />
+        <h2 style={styles.title}>Registrar Consulta</h2>
 
-        <label style={styles.label}>Síntomas:</label>
-        <textarea
-          name="sintomas"
-          value={form.sintomas}
-          onChange={handleChange}
-          required
-          style={styles.textarea}
-        />
+        <form style={styles.form} onSubmit={handleSubmit}>
+          <FormField
+            label="Motivo de consulta"
+            name="motivo"
+            value={form.motivo}
+            onChange={handleChange}
+          />
 
-        <label style={styles.label}>Diagnóstico:</label>
-        <textarea
-          name="diagnostico"
-          value={form.diagnostico}
-          onChange={handleChange}
-          required
-          style={styles.textarea}
-        />
+          <FormField
+            label="Síntomas"
+            name="sintomas"
+            value={form.sintomas}
+            onChange={handleChange}
+          />
 
-        <label style={styles.label}>Tratamiento:</label>
-        <textarea
-          name="tratamiento"
-          value={form.tratamiento}
-          onChange={handleChange}
-          required
-          style={styles.textarea}
-        />
+          <FormField
+            label="Diagnóstico"
+            name="diagnostico"
+            value={form.diagnostico}
+            onChange={handleChange}
+          />
 
-        <label style={styles.label}>Observaciones:</label>
-        <textarea
-          name="observaciones"
-          value={form.observaciones}
-          onChange={handleChange}
-          style={styles.textarea}
-        />
+          <FormField
+            label="Tratamiento"
+            name="tratamiento"
+            value={form.tratamiento}
+            onChange={handleChange}
+          />
 
-        <div style={styles.buttons}>
-          <button
-            type="button"
-            style={styles.btnSecondary}
-            onClick={() => navigate(-1)}
-          >
-            ← Volver
-          </button>
+          <FormField
+            label="Observaciones"
+            name="observaciones"
+            value={form.observaciones}
+            onChange={handleChange}
+            required={false}
+          />
 
-          <button type="submit" style={styles.btnPrimary}>
-            Guardar Consulta
-          </button>
-        </div>
-      </form>
+          <div style={styles.buttons}>
+            <button
+              type="button"
+              style={styles.btnSecondary}
+              onClick={() => navigate(-1)}
+            >
+              ← Volver
+            </button>
+
+            <button type="submit" style={styles.btnPrimary}>
+              Guardar Consulta
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
 
-// ====== ESTILOS SIMPLES EN JS ======
+// 🟦 COMPONENTE PARA CREAR CAMPOS
+const FormField = ({ label, name, value, onChange, required = true }) => (
+  <div style={{ display: "flex", flexDirection: "column" }}>
+    <label style={styles.label}>{label}</label>
+    <textarea
+      name={name}
+      value={value}
+      onChange={onChange}
+      required={required}
+      style={styles.textarea}
+    />
+  </div>
+);
 
+// 🎨 ESTILOS
 const styles = {
-  container: {
+  page: {
+    minHeight: "100vh",
+    background: "#e9f0fb",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     padding: "30px",
+  },
+  card: {
+    width: "100%",
     maxWidth: "700px",
-    margin: "auto",
+    background: "white",
+    padding: "30px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+    color: "#1a1a1a",
   },
   title: {
     textAlign: "center",
-    marginBottom: "20px",
+    marginBottom: "25px",
+    color: "#0d47a1",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "15px",
+    gap: "20px",
   },
   label: {
     fontWeight: "bold",
+    marginBottom: "5px",
+    color: "#0d47a1",
   },
   textarea: {
-    minHeight: "80px",
-    padding: "10px",
+    minHeight: "90px",
+    padding: "12px",
     borderRadius: "8px",
-    border: "1px solid #ccc",
+    border: "1px solid #b0bec5",
     resize: "vertical",
+    fontSize: "15px",
+    color: "#1a1a1a",
+    background: "#f7f9fc",
   },
   buttons: {
     display: "flex",
     justifyContent: "space-between",
-    marginTop: "20px",
+    marginTop: "15px",
   },
   btnPrimary: {
-    background: "#0d6efd",
-    color: "#fff",
-    padding: "10px 20px",
+    background: "#0d47a1",
+    color: "white",
+    padding: "12px 25px",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
+    fontWeight: "bold",
+    transition: "0.2s",
   },
   btnSecondary: {
-    background: "#ccc",
-    padding: "10px 20px",
+    background: "#cfd8dc",
+    color: "#1a1a1a",
+    padding: "12px 25px",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
+    transition: "0.2s",
   },
 };
 

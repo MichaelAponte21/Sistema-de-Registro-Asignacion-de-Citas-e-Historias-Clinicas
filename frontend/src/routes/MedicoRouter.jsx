@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import AgendarCitas from "../paginas/medico/AgendarCitas";
+import AgendarCitas from "../paginas/medico/AgendaCitas";
 import DatosPaciente from "../paginas/medico/DatosPaciente";
 import RegistrarConsulta from "../paginas/medico/RegistrarConsulta";
 
