@@ -1,0 +1,682 @@
+Genial, esto ya está en modo “entregable para el equipo” 🧑‍💻🧑‍⚕️
+
+Te voy a dejar una **documentación en formato Markdown** que puedes pegar tal cual en Notion, un repo, etc. Está pensada para que el frontend:
+
+* Entienda **cómo pensar el backend**.
+* Sepa **qué endpoints hay**, qué envían y qué reciben.
+* Comprenda las **reglas de roles** y los flujos típicos.
+
+---
+
+````markdown
+# SIGCHI – Backend API (FastAPI + PostgreSQL)
+
+Este documento explica la API del backend de **SIGCHI – Sistema de Registro, Asignación de Citas e Historias Clínicas** para el equipo de frontend.
+
+- Backend: **FastAPI**
+- BD: **PostgreSQL**
+- ORM: **SQLAlchemy**
+- Validación: **Pydantic v2**
+- Auth: **OAuth2 password flow + JWT (Bearer token)**
+
+> Nota: todas las rutas descritas aquí son JSON sobre HTTP, y requieren `Content-Type: application/json` salvo donde se indica lo contrario (login con `application/x-www-form-urlencoded`).
+
+---
+
+## 1. Arquitectura general (mental model para frontend)
+
+### 1.1. Entidades principales
+
+- **User**
+  - Representa la cuenta de acceso al sistema.
+  - Campos clave:
+    - `id`
+    - `email`
+    - `first_name` (opcional)
+    - `last_name` (opcional)
+    - `is_active`
+    - `role_id` → referencia a **Role**
+  - Cada `User` tiene **un único rol**.
+
+- **Role**
+  - Solo se manejan 3 roles:
+    - `"admin"`
+    - `"doctor"`
+    - `"patient"`
+
+- **Patient**
+  - Perfil de paciente asociado 1:1 a un `User` cuyo rol es `"patient"`.
+  - Campos:
+    - `id`
+    - `user_id` → `User.id`
+    - `document_type`, `document_number`
+    - `phone`, `address`
+    - `birth_date` (date)
+
+- **Doctor**
+  - Perfil de doctor asociado 1:1 a un `User` cuyo rol es `"doctor"`.
+  - Campos:
+    - `id`
+    - `user_id` → `User.id`
+    - `specialty`
+
+- **Appointment** (citas)
+  - Relaciona un `Patient` y un `Doctor`.
+  - Campos:
+    - `id`
+    - `patient_id` → `Patient.id`
+    - `doctor_id` → `Doctor.id`
+    - `scheduled_at` (datetime con zona)
+    - `status` → `"scheduled" | "completed" | "cancelled"` (de momento se usa `"scheduled"` y `"cancelled"`)
+    - `reason` (motivo de consulta, opcional)
+    - `notes` (notas internas, opcional)
+    - `created_at`, `updated_at`
+
+- **ClinicalHistory**
+  - Registro de una atención médica.
+  - Campos:
+    - `id`
+    - `patient_id` → `Patient.id`
+    - `doctor_id` → `Doctor.id`
+    - `appointment_id` → `Appointment.id` (opcional)
+    - `visit_date` (datetime)
+    - `diagnosis` (texto)
+    - `treatment` (texto)
+    - `notes` (texto)
+    - `created_at`, `updated_at`
+
+---
+
+## 2. Autenticación y autorización
+
+### 2.1. Login (obtener token)
+
+**Endpoint**
+
+- `POST /api/auth/token`
+- Body (form-data, tipo `application/x-www-form-urlencoded`):
+
+```x-www-form-urlencoded
+username=<email_del_usuario>
+password=<password>
+````
+
+**Respuesta**
+
+```json
+{
+  "access_token": "<JWT>",
+  "token_type": "bearer"
+}
+```
+
+### 2.2. Uso del token
+
+En todas las rutas protegidas:
+
+```http
+Authorization: Bearer <JWT>
+```
+
+El token contiene el `sub` con el `user.id`. En backend se resuelve a:
+
+* `get_current_user` → devuelve el `User` autenticado.
+* Sobre ese `User` se mira el `Role` (`admin`, `doctor`, `patient`) para aplicar reglas.
+
+### 2.3. Reglas de acceso por rol (resumen)
+
+* **admin**
+
+  * Puede crear usuarios de cualquier rol.
+  * Puede crear perfiles `Doctor` y `Patient`.
+  * Puede ver todas las citas e historias clínicas.
+  * Puede modificar y cancelar cualquier cita.
+  * Puede modificar y eliminar cualquier historia clínica.
+
+* **doctor**
+
+  * Puede ver **su propio perfil** de doctor (`GET /api/doctors/me`).
+  * Solo ve:
+
+    * citas donde `doctor_id` sea el suyo.
+    * historias clínicas donde `doctor_id` sea el suyo.
+  * Puede crear historias clínicas donde él sea el doctor.
+  * Puede actualizar sus propias citas e historias (no las de otros doctores).
+
+* **patient**
+
+  * Puede ver **su propio perfil** de paciente (`GET /api/patients/me`).
+  * Solo ve:
+
+    * sus propias citas (como paciente).
+    * sus propias historias clínicas.
+  * Puede cancelar **sus propias citas**.
+  * No puede crear ni editar historias clínicas.
+
+---
+
+## 3. Convenciones generales
+
+* **Formato de fechas**:
+
+  * `datetime`: cadenas en **ISO 8601**, por ejemplo:
+
+    * `"2025-11-20T10:00:00Z"`
+    * `"2025-11-20T10:00:00+00:00"`
+  * `date`: `"YYYY-MM-DD"`, por ejemplo `"1995-05-10"`.
+
+* **Errores habituales**:
+
+  * `401 Unauthorized`: token ausente o inválido.
+  * `403 Forbidden`: el usuario no tiene permisos (rol).
+  * `404 Not Found`: recurso no existe o no está autorizado para verlo (según implementación).
+  * `422 Unprocessable Entity`: error de validación Pydantic (ej: email mal formado).
+
+* **Respuesta por defecto**:
+
+  * El backend responde con el modelo JSON directamente (no hay wrapper tipo `{ "data": ..., "meta": ... }` por ahora).
+
+---
+
+## 4. Endpoints por módulo
+
+### 4.1. Auth
+
+#### POST `/api/auth/token`
+
+* **Descripción**: login con email + password, devuelve JWT.
+* **Body (x-www-form-urlencoded)**:
+
+```text
+username=<email>
+password=<password>
+```
+
+* **Respuesta 200**:
+
+```json
+{
+  "access_token": "<JWT>",
+  "token_type": "bearer"
+}
+```
+
+* **Errores**:
+
+  * `401`: credenciales incorrectas.
+  * `400`: usuario inactivo (si se llega a usar esa validación).
+  * `422`: body mal formado.
+
+---
+
+### 4.2. Users
+
+#### POST `/api/users/` (admin only)
+
+* **Descripción**: crea un nuevo usuario del sistema (cuenta base).
+
+* **Auth**: requiere usuario con rol `admin`.
+
+* **Body (JSON)**:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "role_id": 1   // id del rol en la tabla roles (1=admin, 2=doctor, 3=patient, según BD)
+}
+```
+
+* **Respuesta 201** (ejemplo):
+
+```json
+{
+  "id": 5,
+  "email": "user@example.com",
+  "is_active": true,
+  "role_id": 2
+  // puede incluir más campos según el schema configurado (first_name, last_name, etc.)
+}
+```
+
+* **Errores**:
+
+  * `400`: email ya registrado.
+  * `400`: role_id inválido.
+  * `403`: si quien llama no es `admin`.
+  * `422`: validación de email, etc.
+
+#### GET `/api/users/me`
+
+* **Descripción**: devuelve el usuario autenticado.
+
+* **Auth**: cualquier usuario logueado (`admin`, `doctor`, `patient`).
+
+* **Respuesta 200** (ejemplo):
+
+```json
+{
+  "id": 1,
+  "email": "testuser@example.com",
+  "is_active": true,
+  "role_id": 1
+  // etc.
+}
+```
+
+---
+
+### 4.3. Patients
+
+#### POST `/api/patients/` (admin only)
+
+* **Descripción**: crea un perfil de paciente asociado a un `User` con rol `"patient"`.
+
+* **Auth**: `admin`.
+
+* **Body (JSON)**:
+
+```json
+{
+  "user_id": 3,
+  "document_type": "CC",
+  "document_number": "123456789",
+  "phone": "3001234567",
+  "address": "Calle 123 #45-67",
+  "birth_date": "1995-05-10"
+}
+```
+
+* **Respuesta 201**:
+
+```json
+{
+  "id": 1,
+  "user_id": 3,
+  "document_type": "CC",
+  "document_number": "123456789",
+  "phone": "3001234567",
+  "address": "Calle 123 #45-67",
+  "birth_date": "1995-05-10"
+}
+```
+
+* **Errores**:
+
+  * `400`: user no existe.
+  * `400`: user no tiene rol `"patient"`.
+  * `400`: ya existe un perfil `Patient` para ese `user_id`.
+  * `403`: si quien llama no es admin.
+
+#### GET `/api/patients/me`
+
+* **Descripción**: devuelve el perfil de paciente asociado al usuario autenticado (si es `patient`).
+
+* **Auth**: rol `patient` (si es otro rol, el backend puede devolver 403 o 404 según la lógica).
+
+* **Respuesta 200**:
+
+```json
+{
+  "id": 1,
+  "user_id": 3,
+  "document_type": "CC",
+  "document_number": "123456789",
+  "phone": "3001234567",
+  "address": "Calle 123 #45-67",
+  "birth_date": "1995-05-10"
+}
+```
+
+#### GET `/api/patients/` (opcional según implem.)
+
+* Puede existir un listado de pacientes para admin, con paginación básica (`skip`, `limit`).
+  En caso de usarse, asumimos:
+
+  * **Auth**: `admin`.
+  * **Query params**:
+
+    * `skip` (int, default 0)
+    * `limit` (int, default 20)
+
+---
+
+### 4.4. Doctors
+
+#### POST `/api/doctors/` (admin only)
+
+* **Descripción**: crea el perfil de doctor asociado a un `User` con rol `"doctor"`.
+
+* **Auth**: `admin`.
+
+* **Body (JSON)**:
+
+```json
+{
+  "user_id": 2,
+  "specialty": "Cardiología"
+}
+```
+
+* **Respuesta 201**:
+
+```json
+{
+  "id": 1,
+  "user_id": 2,
+  "specialty": "Cardiología"
+}
+```
+
+* **Errores**:
+
+  * `400`: user no existe.
+  * `400`: user no tiene rol `"doctor"`.
+  * `400`: ya existe un perfil `Doctor` para ese `user_id`.
+
+#### GET `/api/doctors/me` (doctor only)
+
+* **Descripción**: devuelve el perfil de doctor del usuario autenticado.
+
+* **Auth**: rol `doctor`.
+
+* **Respuesta 200**:
+
+```json
+{
+  "id": 1,
+  "user_id": 2,
+  "specialty": "Cardiología"
+}
+```
+
+#### GET `/api/doctors/`
+
+* **Descripción**: lista doctores, con paginación.
+
+* **Auth**: actualmente restringido a `admin` (posible extensión a `doctor`/`patient` si se define así).
+
+* **Query params**:
+
+  * `skip` (int, default 0)
+  * `limit` (int, default 20)
+
+* **Respuesta 200**:
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "specialty": "Cardiología"
+  },
+  {
+    "id": 2,
+    "user_id": 4,
+    "specialty": "Medicina General"
+  }
+]
+```
+
+#### GET `/api/doctors/{doctor_id}`
+
+* **Descripción**: devuelve un doctor específico.
+* **Auth**: cualquier usuario autenticado (se puede usar como catálogo para agendar citas).
+
+#### PUT `/api/doctors/{doctor_id}`
+
+* **Descripción**: actualiza datos del doctor.
+
+* **Auth**:
+
+  * `admin`: puede actualizar cualquier doctor.
+  * `doctor`: solo su propio perfil.
+
+* **Body (JSON)**:
+
+```json
+{
+  "specialty": "Medicina Interna"
+}
+```
+
+#### DELETE `/api/doctors/{doctor_id}`
+
+* **Descripción**: elimina un doctor.
+* **Auth**: solo `admin`.
+
+---
+
+### 4.5. Appointments (Citas)
+
+#### POST `/api/appointments/`
+
+* **Descripción**: crea una cita.
+
+* **Auth**:
+
+  * `admin`: puede crear citas para cualquier `patient_id` y `doctor_id` válidos.
+  * `doctor`: solo puede crear citas donde `doctor_id` sea su propio perfil.
+  * `patient`: solo puede crear citas donde `patient_id` sea su propio perfil.
+
+* **Body (JSON)**:
+
+```json
+{
+  "patient_id": 1,
+  "doctor_id": 1,
+  "scheduled_at": "2025-11-20T10:00:00Z",
+  "reason": "Consulta general",
+  "notes": "Cita de prueba"
+}
+```
+
+* **Respuesta 201**:
+
+```json
+{
+  "id": 1,
+  "patient_id": 1,
+  "doctor_id": 1,
+  "scheduled_at": "2025-11-20T10:00:00Z",
+  "reason": "Consulta general",
+  "notes": "Cita de prueba",
+  "status": "scheduled",
+  "created_at": "2025-11-18T12:00:00Z",
+  "updated_at": "2025-11-18T12:00:00Z"
+}
+```
+
+#### GET `/api/appointments/`
+
+* **Descripción**: lista citas según el rol.
+
+* **Auth**:
+
+  * `admin`: ve todas las citas.
+  * `doctor`: ve solo citas donde él es el doctor.
+  * `patient`: ve solo citas donde él es el paciente.
+
+* **Query params**:
+
+  * `skip` (int, default 0)
+  * `limit` (int, default 20)
+
+* **Respuesta 200**: lista de `AppointmentResponse`.
+
+#### GET `/api/appointments/{appointment_id}`
+
+* **Descripción**: devuelve una cita específica.
+* **Auth**:
+
+  * `admin`: cualquier cita.
+  * `doctor`: solo si es su cita.
+  * `patient`: solo si es su cita.
+
+#### PUT `/api/appointments/{appointment_id}`
+
+* **Descripción**: actualiza una cita.
+
+* **Auth**:
+
+  * `admin`: cualquier cita.
+  * `doctor`: solo sus propias citas.
+  * `patient`: en principio no actualiza (solo cancela).
+
+* **Body (JSON)** (todos opcionales):
+
+```json
+{
+  "scheduled_at": "2025-11-20T11:00:00Z",
+  "reason": "Cambio de horario",
+  "notes": "Paciente solicitó cambio",
+  "status": "scheduled"
+}
+```
+
+#### POST `/api/appointments/{appointment_id}/cancel`
+
+* **Descripción**: cancela una cita (`status` pasa a `"cancelled"`).
+
+* **Auth**:
+
+  * `admin`: cualquier cita.
+  * `doctor`: solo citas donde es el doctor.
+  * `patient`: solo citas donde es el paciente.
+
+* **Respuesta 200**: cita con `status: "cancelled"`.
+
+---
+
+### 4.6. Clinical Histories (Historias clínicas)
+
+#### POST `/api/histories/`
+
+* **Descripción**: crea una historia clínica.
+
+* **Auth**:
+
+  * `admin`: puede crear cualquier historia válida.
+  * `doctor`: solo si `doctor_id` coincide con su perfil.
+  * `patient`: **no** puede crear historias.
+
+* **Body (JSON)**:
+
+```json
+{
+  "patient_id": 1,
+  "doctor_id": 1,
+  "appointment_id": 1,     // opcional
+  "visit_date": "2025-11-20T10:30:00Z",
+  "diagnosis": "Paciente sano",
+  "treatment": "Control anual",
+  "notes": "Historia creada en la cita de prueba"
+}
+```
+
+* **Respuesta 201**: `ClinicalHistoryResponse`.
+
+#### GET `/api/histories/`
+
+* **Descripción**: lista historias clínicas según el rol.
+
+* **Auth**:
+
+  * `admin`: todas.
+  * `doctor`: solo historias donde él es el doctor.
+  * `patient`: solo historias donde él es el paciente.
+
+* **Query params**:
+
+  * `skip` (int, default 0)
+  * `limit` (int, default 20 o 50 según config).
+
+#### GET `/api/histories/{history_id}`
+
+* **Descripción**: devuelve una historia específica.
+* **Auth**:
+
+  * `admin`: cualquier historia.
+  * `doctor`: solo si es el doctor en esa historia.
+  * `patient`: solo si es el paciente en esa historia.
+
+#### GET `/api/histories/patient/{patient_id}`
+
+* **Descripción**: lista historias de un paciente concreto.
+* **Auth**:
+
+  * `admin`: cualquier paciente.
+  * `doctor`: solo si todas las historias son de atenciones hechas por él.
+  * `patient`: solo si `patient_id` coincide con su propio perfil.
+
+#### PUT `/api/histories/{history_id}`
+
+* **Descripción**: actualiza una historia.
+
+* **Auth**:
+
+  * `admin`: cualquier historia.
+  * `doctor`: solo si es el doctor de esa historia.
+  * `patient`: no puede actualizar.
+
+* **Body (JSON)** (todos opcionales):
+
+```json
+{
+  "visit_date": "2025-11-20T11:00:00Z",
+  "diagnosis": "Actualización del diagnóstico",
+  "treatment": "Nuevo tratamiento",
+  "notes": "Notas actualizadas"
+}
+```
+
+#### DELETE `/api/histories/{history_id}`
+
+* **Descripción**: elimina una historia clínica.
+* **Auth**: solo `admin`.
+
+---
+
+## 5. Flujos típicos pensados para frontend
+
+### 5.1. Flujo admin para crear doctor y paciente
+
+1. **Login** admin → `POST /api/auth/token`.
+2. **Crear user doctor** → `POST /api/users/`.
+3. **Crear perfil doctor** → `POST /api/doctors/`.
+4. **Crear user patient** → `POST /api/users/`.
+5. **Crear perfil patient** → `POST /api/patients/`.
+
+### 5.2. Flujo doctor
+
+* Login → `/api/auth/token`.
+* Ver su perfil → `GET /api/doctors/me`.
+* Ver sus citas → `GET /api/appointments/`.
+* Crear historias clínicas → `POST /api/histories/`.
+
+### 5.3. Flujo patient
+
+* Login → `/api/auth/token`.
+* Ver su perfil → `GET /api/patients/me`.
+* Ver sus citas → `GET /api/appointments/`.
+* Cancelar cita → `POST /api/appointments/{id}/cancel`.
+* Ver sus historias → `GET /api/histories/`.
+
+---
+
+## 6. Notas para el frontend
+
+* **Token storage**: el frontend debe almacenar el `access_token` (ej. en memoria, localStorage, etc.) y enviarlo en cada petición protegida como `Authorization: Bearer <token>`.
+* **Control de UI por rol**:
+
+  * El frontend puede usar:
+
+    * `/api/users/me` → para saber qué rol tiene el usuario actual.
+    * Según `role_name` (`admin`, `doctor`, `patient`), habilitar/deshabilitar vistas:
+
+      * AdminPanel, AgendaDoctor, AgendaPaciente, etc.
+* **Manejo de fechas**:
+
+  * En formularios de citas e historias, usar siempre formato ISO 8601 con zona horaria.
+  * Para fechas de nacimiento (`birth_date`), formato simple `YYYY-MM-DD`.
+
