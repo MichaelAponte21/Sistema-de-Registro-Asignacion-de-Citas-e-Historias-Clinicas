@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="Cambio del nombre en la carpeta del backend" />
+    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="Cambio del nombre en la carpeta del backend">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -72,6 +74,9 @@
       <workItem from="1763063902461" duration="55000" />
       <workItem from="1763064037284" duration="344000" />
       <workItem from="1763064387090" duration="17000" />
+      <workItem from="1763606426512" duration="4000" />
+      <workItem from="1763606447280" duration="5000" />
+      <workItem from="1763606462288" duration="5000" />
     </task>
     <task id="LOCAL-00001" summary="Cambio del nombre en la carpeta del backend">
       <option name="closed" value="true" />

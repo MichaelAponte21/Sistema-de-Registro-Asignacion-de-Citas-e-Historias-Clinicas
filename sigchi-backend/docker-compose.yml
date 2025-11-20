@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16
@@ -10,4 +12,23 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres-data-sigchi:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    dns:
+      - 8.8.8.8  # Google DNS
+      - 8.8.4.4  # Google DNS
 
+  backend:
+    build: .
+    container_name: sigchi-backend
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://sigchi_user:sigchi_password@postgres:5432/sigchi
+    dns:
+      - 8.8.8.8  # Google DNS
+      - 8.8.4.4  # Google DNS
