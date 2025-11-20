@@ -18,7 +18,7 @@ from passlib.context import CryptContext
 
 # Usamos pbkdf2_sha256 en lugar de bcrypt
 pwd_context = CryptContext(
-    schemes=["pbkdf2_sha256"],
+    schemes=["pbkdf2_sha256", "bcrypt"],
     deprecated="auto",
 )
 

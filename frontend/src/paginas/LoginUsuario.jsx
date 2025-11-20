@@ -2,6 +2,8 @@
 import { useState } from "react";
 import api from "../api/api";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 
 export default function LoginUsuario() {
   const [correo, setCorreo] = useState("");
@@ -14,19 +16,18 @@ export default function LoginUsuario() {
     setError("");
 
     try {
-      const params = new URLSearchParams();
-      params.append("username", correo);
-      params.append("password", password);
+      const formData = new URLSearchParams();
+      formData.append("username", correo);
+      formData.append("password", password);
+      formData.append("grant_type", "password");
 
-      const res = await api.post("/api/auth/token", params, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+      const res = await axios.post("http://localhost:8000/api/auth/token", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
       // guardar token
       localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("rol", res.data.role);
+      localStorage.setItem("role", res.data.role);
 
       // redirección
       if (res.data.role === "doctor") navigate("/medico");
