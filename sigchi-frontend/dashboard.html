@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1>Welcome to Your Dashboard</h1>
+    <div id="userInfo"></div>
+
+    <!-- Menú de navegación basado en el rol -->
+    <div id="roleActions">
+        <button onclick="goToPatients()">Manage Patients</button>
+        <button onclick="goToDoctors()">Manage Doctors</button>
+        <button onclick="goToAppointments()">Manage Appointments</button>
+        <button onclick="goToClinicalHistories()">Manage Clinical Histories</button>
+    </div>
+
+    <!-- Formulario para crear un nuevo usuario (solo visible para admins) -->
+    <div id="createUserFormDiv" style="display: none;">
+        <h3>Create New User</h3>
+        <form id="createUserForm">
+            <input type="email" id="newEmail" placeholder="Email" required />
+            <select id="newRoleId" required>
+                <option value="1">Admin</option>
+                <option value="2">Doctor</option>
+                <option value="3">Patient</option>
+            </select>
+            <button type="submit">Create User</button>
+        </form>
+        <div id="createUserResponse"></div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

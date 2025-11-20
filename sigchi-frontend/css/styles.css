@@ -1,0 +1,32 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f9;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+button {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+form input {
+    margin: 10px 0;
+    padding: 8px;
+    width: 250px;
+}
+
+#roleActions button {
+    margin-top: 10px;
+}
