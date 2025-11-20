@@ -4,13 +4,30 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="Cambio del nombre en la carpeta del backend" />
+    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="Cambio del nombre en la carpeta del backend">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sigchi-backend/.env" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -35,12 +52,13 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/mike/PycharmProjects/Sistema-de-Registro-Asignacion-de-Citas-e-Historias-Clinicas&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/mike/PycharmProjects&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -51,6 +69,11 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/.." />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -72,6 +95,10 @@
       <workItem from="1763063902461" duration="55000" />
       <workItem from="1763064037284" duration="344000" />
       <workItem from="1763064387090" duration="17000" />
+      <workItem from="1763623854816" duration="81000" />
+      <workItem from="1763645510387" duration="855000" />
+      <workItem from="1763646763872" duration="2754000" />
+      <workItem from="1763649553771" duration="9231000" />
     </task>
     <task id="LOCAL-00001" summary="Cambio del nombre en la carpeta del backend">
       <option name="closed" value="true" />
