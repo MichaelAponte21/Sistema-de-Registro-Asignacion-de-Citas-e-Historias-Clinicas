@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import apiPrivate from "../../api/api"; // ⬅️ IMPORTANTE: conectar al backend
 
 const RegistrarConsulta = () => {
   const navigate = useNavigate();
@@ -19,19 +20,24 @@ const RegistrarConsulta = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Consulta registrada:", form);
-    alert("Consulta registrada correctamente (modo demo)");
+    try {
+      // 📌 Enviar la consulta al backend
+      const res = await apiPrivate.post("/consultas", form);
 
-    navigate("/medico/citas");
+      alert("Consulta registrada correctamente");
+      navigate("/medico/citas");
+    } catch (error) {
+      console.error("Error registrando consulta:", error);
+      alert("Error al registrar la consulta");
+    }
   };
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-
         <h2 style={styles.title}>Registrar Consulta</h2>
 
         <form style={styles.form} onSubmit={handleSubmit}>
@@ -90,7 +96,7 @@ const RegistrarConsulta = () => {
   );
 };
 
-// 🟦 COMPONENTE PARA CREAR CAMPOS
+// -------- COMPONENTE CAMPO --------
 const FormField = ({ label, name, value, onChange, required = true }) => (
   <div style={{ display: "flex", flexDirection: "column" }}>
     <label style={styles.label}>{label}</label>
@@ -104,7 +110,7 @@ const FormField = ({ label, name, value, onChange, required = true }) => (
   </div>
 );
 
-// 🎨 ESTILOS
+// -------- ESTILOS --------
 const styles = {
   page: {
     minHeight: "100vh",

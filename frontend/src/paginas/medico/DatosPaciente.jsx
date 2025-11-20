@@ -1,65 +1,107 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import api from "../../api/api"; // ✔ Ruta correcta a api.js
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
-
-const DatosPaciente = () => {
+export default function DatosPaciente() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
 
-  //actualmente colocamos esto simulando un paciente
+  const patientId = query.get("id"); // ID del paciente desde la URL
 
-  const pacienteMock = {
-    nombre: "Juan Pérez",
-    cedula: "123456789",
-    edad: 29,
-    telefono: "3001234567",
-    correo: "juan.perez@example.com",
-    direccion: "Calle 45 # 12 - 31",
-    eps: "Sanitas",
-    antecedentes: "Sin antecedentes relevantes.",
+  const [paciente, setPaciente] = useState(null);
+  const [cargando, setCargando] = useState(true);
+
+  // ===============================================
+  // 1. Cargar datos reales del paciente
+  // ===============================================
+  const cargarPaciente = async () => {
+    try {
+      const res = await api.get(`/patients/${patientId}`);
+      setPaciente(res.data);
+    } catch (err) {
+      console.error("Error cargando paciente:", err);
+      alert("⚠️ No se pudieron cargar los datos del paciente.");
+      navigate("/medico/citas"); // volver si falla
+    } finally {
+      setCargando(false);
+    }
   };
 
+  useEffect(() => {
+    if (patientId) cargarPaciente();
+  }, [patientId]);
+
+  // ===============================================
+  // Render: Cargando
+  // ===============================================
+  if (cargando) {
+    return <p style={{ textAlign: "center", marginTop: "40px" }}>Cargando datos...</p>;
+  }
+
+  // ===============================================
+  // Render: Si no existe paciente
+  // ===============================================
+  if (!paciente) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "40px" }}>
+        <h3>No se encontró el paciente</h3>
+        <button onClick={() => navigate(-1)}>Volver</button>
+      </div>
+    );
+  }
+
+  // ===============================================
+  // Render final con datos reales
+  // ===============================================
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Datos del Paciente</h2>
 
       <div style={styles.card}>
-        <p><strong>Nombre:</strong> {pacienteMock.nombre}</p>
-        <p><strong>Cédula:</strong> {pacienteMock.cedula}</p>
-        <p><strong>Edad:</strong> {pacienteMock.edad} años</p>
-        <p><strong>Teléfono:</strong> {pacienteMock.telefono}</p>
-        <p><strong>Correo:</strong> {pacienteMock.correo}</p>
-        <p><strong>Dirección:</strong> {pacienteMock.direccion}</p>
-        <p><strong>EPS:</strong> {pacienteMock.eps}</p>
-        <p><strong>Antecedentes:</strong> {pacienteMock.antecedentes}</p>
+        <p><strong>Nombre:</strong> {paciente.name}</p>
+        <p><strong>Cédula:</strong> {paciente.document_number}</p>
+        <p><strong>Edad:</strong> {paciente.age} años</p>
+        <p><strong>Teléfono:</strong> {paciente.phone}</p>
+        <p><strong>Correo:</strong> {paciente.email}</p>
+        <p><strong>Dirección:</strong> {paciente.address}</p>
+        <p><strong>EPS:</strong> {paciente.eps}</p>
+        <p><strong>Antecedentes:</strong> {paciente.medical_history || "No registrados"}</p>
       </div>
 
       <div style={styles.buttons}>
         <button style={styles.btn} onClick={() => navigate(-1)}>
           ← Volver
         </button>
+
         <button
           style={styles.btnPrimary}
-          onClick={() => navigate("/medico/registrar-consulta")}
+          onClick={() =>
+            navigate(`/medico/registrar-consulta?patient_id=${paciente.id}`)
+          }
         >
           Registrar Consulta →
         </button>
       </div>
     </div>
   );
-};
+}
 
-// ==== ESTILOS EN JS PARA SIMPLICIDAD ====
+// =====================================================
+// ESTILOS
+// =====================================================
 
 const styles = {
   container: {
     padding: "30px",
-    maxWidth: "600px",
+    maxWidth: "650px",
     margin: "auto",
     color: "#333",
   },
   title: {
     textAlign: "center",
     marginBottom: "20px",
+    color: "#0d47a1",
   },
   card: {
     background: "#fff",
@@ -89,5 +131,3 @@ const styles = {
     cursor: "pointer",
   },
 };
-
-export default DatosPaciente;

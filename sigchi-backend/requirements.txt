@@ -27,3 +27,5 @@ websockets==15.0.1
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
+pydantic-settings
+psycopg2-binary

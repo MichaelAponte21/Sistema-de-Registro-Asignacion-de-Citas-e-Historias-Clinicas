@@ -14,14 +14,26 @@ export default function LoginUsuario() {
     setError("");
 
     try {
-      const res = await api.post("/auth/login", { correo, password });
+      const params = new URLSearchParams();
+      params.append("username", correo);
+      params.append("password", password);
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("rol", res.data.rol);
+      const res = await api.post("/api/auth/token", params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-      if (res.data.rol === "MEDICO") navigate("/medico");
+      // guardar token
+      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("rol", res.data.role);
+
+      // redirección
+      if (res.data.role === "doctor") navigate("/medico");
       else navigate("/usuario");
+
     } catch (err) {
+      console.log(err);
       setError("Credenciales incorrectas");
     }
   };
@@ -59,9 +71,14 @@ export default function LoginUsuario() {
           Iniciar Sesión
         </h1>
 
-        <form onSubmit={manejarLogin} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+        <form
+          onSubmit={manejarLogin}
+          style={{ display: "flex", flexDirection: "column", gap: "18px" }}
+        >
           <div>
-            <label style={{ color: "#0d47a1", fontWeight: "bold" }}>Correo</label>
+            <label style={{ color: "#0d47a1", fontWeight: "bold" }}>
+              Correo
+            </label>
             <input
               type="email"
               value={correo}
@@ -69,18 +86,19 @@ export default function LoginUsuario() {
               placeholder="usuario@ejemplo.com"
               style={{
                 width: "100%",
+                boxSizing: "border-box",
                 padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #90caf9",
-                marginTop: "5px",
-                outline: "none",
               }}
               required
             />
           </div>
 
           <div>
-            <label style={{ color: "#0d47a1", fontWeight: "bold" }}>Contraseña</label>
+            <label style={{ color: "#0d47a1", fontWeight: "bold" }}>
+              Contraseña
+            </label>
             <input
               type="password"
               value={password}
@@ -88,18 +106,25 @@ export default function LoginUsuario() {
               placeholder="Ingrese su contraseña"
               style={{
                 width: "100%",
+                boxSizing: "border-box",
                 padding: "12px",
                 borderRadius: "8px",
                 border: "1px solid #90caf9",
-                marginTop: "5px",
-                outline: "none",
               }}
               required
             />
           </div>
 
           {error && (
-            <p style={{ color: "red", textAlign: "center", fontWeight: "bold" }}>{error}</p>
+            <p
+              style={{
+                color: "red",
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              {error}
+            </p>
           )}
 
           <button

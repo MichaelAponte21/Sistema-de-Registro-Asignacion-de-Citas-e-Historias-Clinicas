@@ -3,17 +3,16 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginUsuario from "./paginas/LoginUsuario";
 import LoginMedico from "./paginas/medico/LoginMedico";
 import MedicoRouter from "./routes/MedicoRouter";
-import AgendarCitas from "./paginas/medico/AgendaCitas"
-import DatosPaciente from "./paginas/medico/DatosPaciente"
-import RegistrarConsulta from "./paginas/medico/RegistrarConsulta"
 
-// Protege rutas según token + rol
-function ProtectedRoute({ children, rol }) {
+// Ruta protegida real del backend
+function ProtectedRoute({ children, allow }) {
   const token = localStorage.getItem("token");
-  const userRol = localStorage.getItem("rol");
+  const role = localStorage.getItem("role"); // "admin" | "doctor" | "patient"
 
-  if (!token) return <Navigate to="/" />;
-  if (rol && rol !== userRol) return <Navigate to="/" />;
+  if (!token) return <Navigate to="/" replace />;
+
+  // Si se exige un rol específico
+  if (allow && !allow.includes(role)) return <Navigate to="/" replace />;
 
   return children;
 }
@@ -22,31 +21,32 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login principal */}
-        <Route path="/" element={<RegistrarConsulta />} />
 
-        {/* Dashboard del médico */}
+        {/* Login general */}
+        <Route path="/" element={<LoginUsuario />} />
+
+        {/* Dashboard médico */}
         <Route
           path="/medico"
           element={
-            <ProtectedRoute rol="MEDICO">
+            <ProtectedRoute allow={["doctor"]}>
               <LoginMedico />
             </ProtectedRoute>
           }
         />
 
-        {/* Subrutas del médico */}
+        {/* Subrutas reales del médico */}
         <Route
           path="/medico/*"
           element={
-            <ProtectedRoute rol="MEDICO">
+            <ProtectedRoute allow={["doctor"]}>
               <MedicoRouter />
             </ProtectedRoute>
           }
         />
 
-        {/* Cualquier ruta inválida */}
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* Rutas inválidas */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

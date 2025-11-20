@@ -1,100 +1,127 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api"; // RUTA CORRECTA A api.js
 
 export default function AgendarCitas() {
   const navigate = useNavigate();
   const [citas, setCitas] = useState([]);
   const [form, setForm] = useState({
-    pacienteId: "",
+    patient_id: "",
     fecha: "",
     hora: "",
     motivo: "",
   });
 
-  // --------------------------
-  // Cargar citas (simulado)
-  // --------------------------
+  // ===============================================
+  // 1. CARGAR CITAS DEL MÉDICO LOGUEADO
+  // ===============================================
+  const cargarCitas = async () => {
+    try {
+      const res = await api.get("/appointments/");
+      setCitas(res.data);
+    } catch (err) {
+      console.error("Error cargando citas:", err);
+      alert("⚠️ No se pudieron cargar las citas.");
+    }
+  };
+
   useEffect(() => {
-    // fetch("http://localhost:8000/citas")
-    setCitas([
-      { id: 1, paciente: "Carlos López", fecha: "2025-01-20", hora: "10:00 AM", motivo: "Chequeo general" },
-      { id: 2, paciente: "Ana Torres", fecha: "2025-01-22", hora: "02:00 PM", motivo: "Dolor de cabeza" },
-    ]);
+    cargarCitas();
   }, []);
 
-  // --------------------------
-  // Manejar cambios del form
-  // --------------------------
+  // ===============================================
+  // Manejo del formulario
+  // ===============================================
   const handleChange = (e) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
-  // --------------------------
-  // Crear cita
-  // --------------------------
+  // ===============================================
+  // 2. CREAR CITA
+  // ===============================================
   const crearCita = async (e) => {
     e.preventDefault();
 
-    if (!form.pacienteId || !form.fecha || !form.hora || !form.motivo) {
-      alert("Por favor complete todos los campos");
+    if (!form.patient_id || !form.fecha || !form.hora) {
+      alert("⚠️ Complete todos los campos obligatorios.");
       return;
     }
 
-    const nueva = {
-      id: citas.length + 1,
-      paciente: `Paciente #${form.pacienteId}`,
-      fecha: form.fecha,
-      hora: form.hora,
-      motivo: form.motivo,
-    };
+    const scheduled_at = `${form.fecha}T${form.hora}:00`;
 
-    setCitas([...citas, nueva]);
+    try {
+      const body = {
+        patient_id: Number(form.patient_id),
+        scheduled_at,
+        reason: form.motivo,
+      };
 
-    // Vaciar form
-    setForm({
-      pacienteId: "",
-      fecha: "",
-      hora: "",
-      motivo: "",
-    });
+      await api.post("/appointments/", body);
 
-    alert("Cita creada con éxito");
+      alert("✅ Cita creada correctamente");
+
+      setForm({
+        patient_id: "",
+        fecha: "",
+        hora: "",
+        motivo: "",
+      });
+
+      cargarCitas();
+    } catch (err) {
+      console.error("Error creando cita:", err);
+      alert("⚠️ Error al crear la cita.");
+    }
   };
 
-  // --------------------------
-  // Cancelar cita
-  // --------------------------
-  const cancelarCita = (id) => {
-    const filtradas = citas.filter(c => c.id !== id);
-    setCitas(filtradas);
+  // ===============================================
+  // 3. CANCELAR CITA
+  // ===============================================
+  const cancelarCita = async (id) => {
+    if (!confirm("¿Seguro que deseas cancelar esta cita?")) return;
+
+    try {
+      await api.post(`/appointments/${id}/cancel`);
+      alert("✅ Cita cancelada");
+      cargarCitas();
+    } catch (err) {
+      console.error("Error cancelando cita:", err);
+      alert("⚠️ No se pudo cancelar la cita.");
+    }
   };
 
+  // ===============================================
+  // Render
+  // ===============================================
   return (
     <div style={{ padding: "40px" }}>
-
       <h1 style={{ color: "#1565c0" }}>Agendar Citas</h1>
-      <p>Desde aquí puede crear, consultar y cancelar citas.</p>
+      <p>Puedes crear, consultar y cancelar citas.</p>
 
-      {/* ---------------------- FORMULARIO ---------------------- */}
-      <div style={{
-        background: "#f4f9ff",
-        padding: "20px",
-        borderRadius: "10px",
-        border: "1px solid #d0e3ff",
-        width: "400px",
-        marginBottom: "30px"
-      }}>
-        <h3 style={{ marginBottom: "15px", color: "#0d47a1" }}>Crear nueva cita</h3>
+      {/* Formulario */}
+      <div
+        style={{
+          background: "#f4f9ff",
+          padding: "20px",
+          borderRadius: "10px",
+          border: "1px solid #d0e3ff",
+          width: "420px",
+          marginBottom: "30px",
+        }}
+      >
+        <h3 style={{ marginBottom: "15px", color: "#0d47a1" }}>
+          Crear nueva cita
+        </h3>
 
         <form onSubmit={crearCita}>
           <label>ID Paciente:</label>
           <input
             type="text"
-            name="pacienteId"
-            value={form.pacienteId}
+            name="patient_id"
+            value={form.patient_id}
             onChange={handleChange}
             style={{ width: "100%", marginBottom: 10, padding: 8 }}
           />
@@ -135,7 +162,7 @@ export default function AgendarCitas() {
               color: "white",
               border: "none",
               borderRadius: "5px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             Crear cita
@@ -143,8 +170,10 @@ export default function AgendarCitas() {
         </form>
       </div>
 
-      {/* ---------------------- LISTADO DE CITAS ---------------------- */}
-      <h3 style={{ color: "#0d47a1", marginBottom: "10px" }}>Citas programadas</h3>
+      {/* Listado */}
+      <h3 style={{ color: "#0d47a1", marginBottom: "10px" }}>
+        Citas programadas
+      </h3>
 
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
@@ -158,47 +187,53 @@ export default function AgendarCitas() {
         </thead>
 
         <tbody>
-          {citas.map(cita => (
-            <tr key={cita.id} style={{ borderBottom: "1px solid #ddd" }}>
-              <td style={{ padding: 10 }}>{cita.paciente}</td>
-              <td style={{ padding: 10 }}>{cita.fecha}</td>
-              <td style={{ padding: 10 }}>{cita.hora}</td>
-              <td style={{ padding: 10 }}>{cita.motivo}</td>
+          {citas.map((cita) => {
+            const fecha = cita.scheduled_at?.split("T")[0];
+            const hora = cita.scheduled_at?.split("T")[1]?.substring(0, 5);
 
-              <td style={{ padding: 10, display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => navigate(`/medico/registrar-consulta?id=${cita.id}`)}
-                  style={{
-                    padding: "5px 10px",
-                    background: "#2e7d32",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Registrar
-                </button>
+            return (
+              <tr key={cita.id} style={{ borderBottom: "1px solid #ddd" }}>
+                <td style={{ padding: 10 }}>{cita.patient_id}</td>
+                <td style={{ padding: 10 }}>{fecha}</td>
+                <td style={{ padding: 10 }}>{hora}</td>
+                <td style={{ padding: 10 }}>{cita.reason}</td>
 
-                <button
-                  onClick={() => cancelarCita(cita.id)}
-                  style={{
-                    padding: "5px 10px",
-                    background: "#c62828",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Cancelar
-                </button>
-              </td>
-            </tr>
-          ))}
+                <td style={{ padding: 10, display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() =>
+                      navigate(`/medico/registrar-consulta?id=${cita.id}`)
+                    }
+                    style={{
+                      padding: "5px 10px",
+                      background: "#2e7d32",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Registrar
+                  </button>
+
+                  <button
+                    onClick={() => cancelarCita(cita.id)}
+                    style={{
+                      padding: "5px 10px",
+                      background: "#c62828",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-
     </div>
   );
 }
