@@ -63,11 +63,11 @@ def list_patients(
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(["admin"])),
+    current_user: User = Depends(require_roles(["admin", "doctor"])),
 ):
     """
     Lista de pacientes con paginación básica.
-    Solo 'admin' (puedes agregar 'doctor' en require_roles si lo necesitas).
+    Admin y doctor.
     """
     patients = patient_service.list_patients(db, skip=skip, limit=limit)
     return patients

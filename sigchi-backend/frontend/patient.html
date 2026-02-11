@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGCHI – Paciente</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    body { background:#f7fbff; }
+    .card-shadow { box-shadow: 0 12px 32px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+    pre { background:#0f172a; color:#f8fafc; padding:1rem; border-radius:0.5rem; max-height:260px; overflow:auto; }
+  </style>
+</head>
+<body class="pb-5">
+<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm mb-4">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">SIGCHI – Paciente</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge text-bg-info" id="user-pill">Paciente</span>
+      <button class="btn btn-outline-secondary btn-sm" id="btn-logout">Cerrar sesión</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div id="page-alert"></div>
+
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal-cancel">Cancelar cita</button>
+  </div>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#pane-profile" type="button" role="tab">Perfil</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-appointments" data-bs-toggle="tab" data-bs-target="#pane-appointments" type="button" role="tab">Citas</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-histories" data-bs-toggle="tab" data-bs-target="#pane-histories" type="button" role="tab">Historias</button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="pane-profile" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Mi perfil</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-me">Actualizar</button>
+          </div>
+          <div id="profile" class="text-secondary small">Cargando perfil...</div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="pane-appointments" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Mis citas</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-appointments">Actualizar</button>
+          </div>
+          <div id="appointments-output" class="text-secondary small">Cargando citas...</div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="pane-histories" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Mis historias clínicas</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-histories">Actualizar</button>
+          </div>
+          <div id="histories-output" class="text-secondary small">Cargando historias...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cancelar cita -->
+<div class="modal fade" id="modal-cancel" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cancelar cita</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-cancel"></div>
+        <form id="form-cancel">
+          <div class="mb-2">
+            <label class="form-label">Selecciona tu cita</label>
+            <select name="appointment_id" class="form-select" required>
+              <option value="">Selecciona</option>
+            </select>
+          </div>
+          <button class="btn btn-danger w-100" type="submit">Cancelar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const profile = document.getElementById("profile");
+  const appointmentsOutput = document.getElementById("appointments-output");
+  const historiesOutput = document.getElementById("histories-output");
+  const selectCancel = document.querySelector("#form-cancel select[name='appointment_id']");
+
+  function log(title, payload) { console.log(title, payload); }
+
+  function showAlert(targetId, msg, type = "danger") {
+    const slot = document.getElementById(targetId);
+    if (!slot) return;
+    slot.innerHTML = msg
+      ? `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${msg}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+         </div>`
+      : "";
+  }
+
+  function apiBase() { return window.location.origin.replace(/\/$/, ""); }
+  function token() { return localStorage.getItem("sigchi_token"); }
+  function ensureAuth() { if (!token()) window.location.href = "/login"; }
+  function setText(el, data) { el.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2); }
+  function renderProfile(el, data, fields) {
+    if (!data) {
+      el.textContent = "Sin datos.";
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "table table-sm table-borderless mb-0";
+    const tbody = document.createElement("tbody");
+    fields.forEach(([label, key]) => {
+      const tr = document.createElement("tr");
+      const v = data[key] ?? "-";
+      tr.innerHTML = `<th class="text-secondary fw-normal" style="width:160px;">${label}</th><td>${v}</td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.innerHTML = "";
+    el.appendChild(table);
+  }
+  function renderAppointments(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      appointmentsOutput.textContent = "No hay citas.";
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr><th>ID</th><th>Fecha</th><th>Estado</th><th>Motivo</th></tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(a => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${a.id ?? "-"}</td>
+        <td>${a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : "-"}</td>
+        <td><span class="badge text-bg-${a.status === "cancelled" ? "danger" : a.status === "completed" ? "success" : "warning"}">${a.status || "-"}</span></td>
+        <td>${a.reason || "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    appointmentsOutput.innerHTML = "";
+    appointmentsOutput.appendChild(table);
+  }
+
+  function renderHistories(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      historiesOutput.textContent = "No hay historias.";
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr><th>ID</th><th>Fecha</th><th>Dx</th><th>Tx</th></tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(h => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${h.id ?? "-"}</td>
+        <td>${h.visit_date ? new Date(h.visit_date).toLocaleString() : "-"}</td>
+        <td>${h.diagnosis || "-"}</td>
+        <td>${h.treatment || "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    historiesOutput.innerHTML = "";
+    historiesOutput.appendChild(table);
+  }
+  function fillSelect(selectEl, items, placeholder) {
+    selectEl.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+    items.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.label;
+      selectEl.appendChild(option);
+    });
+  }
+
+  async function api(path, options = {}) {
+    ensureAuth();
+    const headers = options.headers ? {...options.headers} : {};
+    headers["Authorization"] = "Bearer " + token();
+    if (options.body && !(options.body instanceof FormData)) {
+      headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    }
+    const res = await fetch(apiBase() + path, {...options, headers});
+    let data;
+    try { data = await res.json(); } catch { data = await res.text(); }
+    if (!res.ok) throw data;
+    return data;
+  }
+
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    localStorage.removeItem("sigchi_token");
+    document.cookie = "access_token=; Max-Age=0; path=/";
+    window.location.href = "/login";
+  });
+
+  document.getElementById("btn-me").addEventListener("click", async () => {
+    try {
+      const res = await api("/api/patients/me");
+      renderProfile(profile, res, [
+        ["ID", "id"],
+        ["User ID", "user_id"],
+        ["Tipo doc", "document_type"],
+        ["Número doc", "document_number"],
+        ["Teléfono", "phone"],
+        ["Dirección", "address"],
+        ["Fecha nacimiento", "birth_date"],
+      ]);
+      log("Perfil", res);
+    } catch (err) {
+      profile.textContent = typeof err?.detail === "string" ? err.detail : "No se pudo cargar el perfil";
+      showAlert("page-alert", "Error al cargar perfil", "danger");
+    }
+  });
+
+  document.getElementById("btn-appointments").addEventListener("click", async () => {
+    try { const res = await api("/api/appointments/"); renderAppointments(res); log("Citas", res); syncAppointmentSelect(res); }
+    catch (err) { appointmentsOutput.textContent = "Error al cargar citas"; showAlert("page-alert", "Error al cargar citas", "danger"); }
+  });
+
+  document.getElementById("form-cancel").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const id = f.get("appointment_id");
+    try {
+      showAlert("alert-cancel", "", "primary");
+      const res = await api(`/api/appointments/${id}/cancel`, {method:"POST"});
+      log("Cita cancelada", res);
+      e.target.reset();
+      showAlert("alert-cancel", "Cita cancelada", "success");
+      document.getElementById("btn-appointments").click();
+    }
+    catch (err) { log("Error cancelar", err); showAlert("alert-cancel", err?.detail || JSON.stringify(err), "danger"); }
+  });
+
+  document.getElementById("btn-histories").addEventListener("click", async () => {
+    try { const res = await api("/api/histories/"); renderHistories(res); log("Historias", res); }
+    catch (err) { historiesOutput.textContent = "Error al cargar historias"; showAlert("page-alert", "Error al cargar historias", "danger"); }
+  });
+
+  function syncAppointmentSelect(data) {
+    if (!Array.isArray(data)) return;
+    const items = data.map(a => ({id: a.id, label: `Cita #${a.id} – ${a.scheduled_at || ""}`}));
+    fillSelect(selectCancel, items, "Selecciona");
+  }
+
+  ensureAuth();
+  document.getElementById("btn-me").click();
+  document.getElementById("btn-appointments").click();
+  document.getElementById("btn-histories").click();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+</html>

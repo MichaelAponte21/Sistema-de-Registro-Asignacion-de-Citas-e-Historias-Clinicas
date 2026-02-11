@@ -23,5 +23,6 @@ class DoctorUpdate(DoctorBase):
 class DoctorResponse(DoctorBase):
     id: int
     user_id: int
+    user_email: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

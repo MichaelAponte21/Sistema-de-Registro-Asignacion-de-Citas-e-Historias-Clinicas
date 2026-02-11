@@ -19,12 +19,23 @@ from app.schemas.doctor import (
     DoctorResponse,
 )
 from app.services import doctor_service
+from app.core.db.models import Doctor
 
 
 router = APIRouter(
     prefix="/api/doctors",
     tags=["Doctors"],
 )
+
+def doctor_to_response(doctor: Doctor) -> dict:
+    user = getattr(doctor, "user", None)
+    email = getattr(user, "email", None)
+    return {
+        "id": doctor.id,
+        "user_id": doctor.user_id,
+        "specialty": doctor.specialty,
+        "user_email": email,
+    }
 
 
 # --- Crear doctor (solo admin) ---
@@ -72,7 +83,7 @@ def create_doctor(
         )
 
     doctor = doctor_service.create_doctor(db, doctor_in)
-    return doctor
+    return doctor_to_response(doctor)
 
 
 # --- Listar doctores (solo admin; si quieres, agregar 'doctor') ---
@@ -91,7 +102,7 @@ def list_doctors(
     Solo 'admin' (puedes añadir 'doctor' en require_roles si lo necesitas).
     """
     doctors = doctor_service.list_doctors(db, skip=skip, limit=limit)
-    return doctors
+    return [doctor_to_response(d) for d in doctors]
 
 
 # --- Ver mi perfil de doctor (rol doctor) ---
@@ -113,7 +124,7 @@ def get_my_doctor_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Doctor profile not found for this user",
         )
-    return doctor
+    return doctor_to_response(doctor)
 
 
 # --- Obtener doctor por id (visible para cualquier usuario activo) ---
@@ -137,7 +148,7 @@ def get_doctor_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Doctor not found",
         )
-    return doctor
+    return doctor_to_response(doctor)
 
 
 # --- Actualizar doctor (admin o el propio doctor) ---
@@ -184,7 +195,7 @@ def update_doctor(
         )
 
     doctor = doctor_service.update_doctor(db, doctor, doctor_in)
-    return doctor
+    return doctor_to_response(doctor)
 
 
 # --- Eliminar doctor (solo admin) ---
