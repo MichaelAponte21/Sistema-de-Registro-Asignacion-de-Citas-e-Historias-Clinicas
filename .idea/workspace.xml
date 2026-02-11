@@ -4,18 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/admin.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/doctor.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/login.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/patient.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/routers/doctors.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/routers/doctors.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/routers/patients.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/routers/patients.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/routers/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/routers/users.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/schemas/doctor.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/schemas/doctor.py" afterDir="false" />
-    </list>
+    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="Creacion de front end, revisar refactorizar y arreglar" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -106,7 +95,7 @@
       <workItem from="1763645510387" duration="855000" />
       <workItem from="1763646763872" duration="2754000" />
       <workItem from="1763649553771" duration="15502000" />
-      <workItem from="1770838640335" duration="750000" />
+      <workItem from="1770838640335" duration="1467000" />
     </task>
     <task id="LOCAL-00001" summary="Cambio del nombre en la carpeta del backend">
       <option name="closed" value="true" />
@@ -124,7 +113,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763063800382</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Creacion de front end, revisar refactorizar y arreglar">
+      <option name="closed" value="true" />
+      <created>1770840234168</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1770840234168</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -143,6 +140,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Cambio del nombre en la carpeta del backend" />
-    <option name="LAST_COMMIT_MESSAGE" value="Cambio del nombre en la carpeta del backend" />
+    <MESSAGE value="Creacion de front end, revisar refactorizar y arreglar" />
+    <option name="LAST_COMMIT_MESSAGE" value="Creacion de front end, revisar refactorizar y arreglar" />
   </component>
 </project>
