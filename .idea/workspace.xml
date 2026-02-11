@@ -4,10 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="Cambio del nombre en la carpeta del backend">
+    <list default="true" id="bcc29962-181e-4651-a4f2-026708506675" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/admin.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/doctor.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/login.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sigchi-backend/frontend/patient.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sigchi-backend/.env" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sigchi-backend/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/routers/doctors.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/routers/doctors.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/routers/patients.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/routers/patients.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/routers/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/routers/users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sigchi-backend/app/schemas/doctor.py" beforeDir="false" afterPath="$PROJECT_DIR$/sigchi-backend/app/schemas/doctor.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +63,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Mike-front&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/mike/PycharmProjects&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -98,7 +105,8 @@
       <workItem from="1763623854816" duration="81000" />
       <workItem from="1763645510387" duration="855000" />
       <workItem from="1763646763872" duration="2754000" />
-      <workItem from="1763649553771" duration="9231000" />
+      <workItem from="1763649553771" duration="15502000" />
+      <workItem from="1770838640335" duration="750000" />
     </task>
     <task id="LOCAL-00001" summary="Cambio del nombre en la carpeta del backend">
       <option name="closed" value="true" />

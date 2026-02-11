@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGCHI – Panel Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    body { background: #f7fbff; }
+    .card-shadow { box-shadow: 0 12px 32px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+    pre { background:#0f172a; color:#f8fafc; padding:1rem; border-radius:0.5rem; max-height:300px; overflow:auto; }
+  </style>
+</head>
+<body class="pb-5">
+<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm mb-4">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">SIGCHI – Admin</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge text-bg-primary" id="user-pill">Admin</span>
+      <button class="btn btn-outline-secondary btn-sm" id="btn-logout">Cerrar sesión</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div id="page-alert"></div>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-user">Nuevo usuario</button>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-doctor">Crear perfil doctor</button>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-patient">Crear perfil paciente</button>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modal-appointment">Agendar cita</button>
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modal-edit-doctor">Editar doctor</button>
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modal-edit-patient">Editar paciente</button>
+    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modal-edit-appointment">Editar cita</button>
+  </div>
+
+  <ul class="nav nav-tabs mb-3" id="listTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-appointments" data-bs-toggle="tab" data-bs-target="#pane-appointments" type="button" role="tab">Citas</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-doctors" data-bs-toggle="tab" data-bs-target="#pane-doctors" type="button" role="tab">Doctores</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-patients" data-bs-toggle="tab" data-bs-target="#pane-patients" type="button" role="tab">Pacientes</button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="pane-appointments" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Citas</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-refresh-appointments">Actualizar</button>
+          </div>
+          <div id="appointments-output" class="small text-secondary">Cargando citas...</div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="pane-doctors" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Doctores</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-refresh-doctors">Actualizar</button>
+          </div>
+          <div id="doctors-output" class="small text-secondary">Cargando doctores...</div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="pane-patients" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Pacientes</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-refresh-patients">Actualizar</button>
+          </div>
+          <div id="patients-output" class="small text-secondary">Cargando pacientes...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales -->
+<div class="modal fade" id="modal-user" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-user"></div>
+        <form id="form-user">
+          <div class="mb-2">
+            <label class="form-label">Correo</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contraseña</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rol</label>
+            <select class="form-select" name="role_id" required>
+              <option value="1">admin</option>
+              <option value="2" selected>doctor</option>
+              <option value="3">patient</option>
+            </select>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Crear</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-doctor" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear perfil doctor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-doctor"></div>
+        <form id="form-doctor">
+          <div class="mb-2">
+            <label class="form-label">Usuario</label>
+            <select name="user_id" class="form-select" required>
+              <option value="">Selecciona un usuario con rol doctor</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Especialidad</label>
+            <input type="text" name="specialty" class="form-control" required>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Guardar doctor</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-patient" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear perfil paciente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-patient"></div>
+        <form id="form-patient">
+          <div class="mb-2">
+            <label class="form-label">Usuario</label>
+            <select name="user_id" class="form-select" required>
+              <option value="">Selecciona un usuario con rol patient</option>
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Tipo doc</label>
+              <input type="text" name="document_type" class="form-control" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Número doc</label>
+              <input type="text" name="document_number" class="form-control" required>
+            </div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-6">
+              <label class="form-label">Teléfono</label>
+              <input type="text" name="phone" class="form-control" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Dirección</label>
+              <input type="text" name="address" class="form-control" required>
+            </div>
+          </div>
+          <div class="mb-3 mt-1">
+            <label class="form-label">Fecha nacimiento</label>
+            <input type="date" name="birth_date" class="form-control" required>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Guardar paciente</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-appointment" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agendar cita</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-appointment"></div>
+        <form id="form-appointment">
+          <div class="mb-2">
+            <label class="form-label">Paciente</label>
+            <select name="patient_id" class="form-select" required>
+              <option value="">Selecciona un paciente</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Doctor</label>
+            <select name="doctor_id" class="form-select" required>
+              <option value="">Selecciona un doctor</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Fecha y hora</label>
+            <input type="datetime-local" name="scheduled_at" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Motivo</label>
+            <input type="text" name="reason" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notas</label>
+            <textarea name="notes" class="form-control" rows="2"></textarea>
+          </div>
+          <button class="btn btn-success w-100" type="submit">Agendar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar doctor -->
+<div class="modal fade" id="modal-edit-doctor" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar doctor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-edit-doctor"></div>
+        <form id="form-edit-doctor">
+          <div class="mb-2">
+            <label class="form-label">Doctor</label>
+            <select name="doctor_id" class="form-select" required>
+              <option value="">Selecciona un doctor</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Especialidad</label>
+            <input type="text" name="specialty" class="form-control" required>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Guardar cambios</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar paciente -->
+<div class="modal fade" id="modal-edit-patient" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar paciente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-edit-patient"></div>
+        <form id="form-edit-patient">
+          <div class="mb-2">
+            <label class="form-label">Paciente</label>
+            <select name="patient_id" class="form-select" required>
+              <option value="">Selecciona un paciente</option>
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Teléfono</label>
+              <input type="text" name="phone" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Dirección</label>
+              <input type="text" name="address" class="form-control">
+            </div>
+          </div>
+          <div class="mb-2 mt-2">
+            <label class="form-label">Número doc</label>
+            <input type="text" name="document_number" class="form-control">
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Guardar cambios</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar cita -->
+<div class="modal fade" id="modal-edit-appointment" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar cita</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-edit-appointment"></div>
+        <form id="form-edit-appointment">
+          <div class="mb-2">
+            <label class="form-label">Cita</label>
+            <select name="appointment_id" class="form-select" required>
+              <option value="">Selecciona una cita</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Fecha y hora</label>
+            <input type="datetime-local" name="scheduled_at" class="form-control">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Estado</label>
+            <select name="status" class="form-select">
+              <option value="">(sin cambio)</option>
+              <option value="scheduled">Programada</option>
+              <option value="completed">Realizada</option>
+              <option value="cancelled">Cancelada</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Motivo</label>
+            <input type="text" name="reason" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notas</label>
+            <textarea name="notes" class="form-control" rows="2"></textarea>
+          </div>
+          <button class="btn btn-success w-100" type="submit">Guardar cambios</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const appointmentsOutput = document.getElementById("appointments-output");
+  const doctorsOutput = document.getElementById("doctors-output");
+  const patientsOutput = document.getElementById("patients-output");
+  let appointmentsCache = [];
+  let doctorsCache = [];
+  let patientsCache = [];
+
+  function log(title, payload) {
+    console.log(title, payload);
+  }
+
+  function showAlert(targetId, msg, type = "danger") {
+    const slot = document.getElementById(targetId);
+    if (!slot) return;
+    slot.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${msg}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>`;
+  }
+
+  function apiBase() {
+    return window.location.origin.replace(/\/$/, "");
+  }
+
+  function token() {
+    return localStorage.getItem("sigchi_token");
+  }
+
+  function ensureAuth() {
+    if (!token()) {
+      window.location.href = "/login";
+    }
+  }
+
+  async function api(path, options = {}) {
+    ensureAuth();
+    const headers = options.headers ? {...options.headers} : {};
+    headers["Authorization"] = "Bearer " + token();
+    if (options.body && !(options.body instanceof FormData)) {
+      headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    }
+    const res = await fetch(apiBase() + path, {...options, headers});
+    let data;
+    try { data = await res.json(); } catch { data = await res.text(); }
+    if (!res.ok) throw data;
+    return data;
+  }
+
+  function renderAppointments(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      appointmentsOutput.textContent = "No hay citas registradas.";
+      return;
+    }
+    appointmentsCache = Array.isArray(list) ? [...list] : [];
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Paciente</th>
+          <th>Doctor</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Motivo</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(a => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${a.id ?? "-"}</td>
+        <td>${a.patient_id ?? "-"}</td>
+        <td>${a.doctor_id ?? "-"}</td>
+        <td>${a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : "-"}</td>
+        <td><span class="badge text-bg-${a.status === "cancelled" ? "danger" : a.status === "completed" ? "success" : "warning"}">${a.status || "-"}</span></td>
+        <td>${a.reason || "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    appointmentsOutput.innerHTML = "";
+    appointmentsOutput.appendChild(table);
+  }
+
+  function renderDoctors(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      doctorsOutput.textContent = "No hay doctores registrados.";
+      return;
+    }
+    doctorsCache = Array.isArray(list) ? [...list] : [];
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Especialidad</th>
+          <th>Email</th>
+          <th>UserID</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(d => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${d.id ?? "-"}</td>
+        <td>${d.specialty || "-"}</td>
+        <td>${d.user_email || d.user?.email || "-"}</td>
+        <td>${d.user_id ?? "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    doctorsOutput.innerHTML = "";
+    doctorsOutput.appendChild(table);
+  }
+
+  function renderPatients(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      patientsOutput.textContent = "No hay pacientes registrados.";
+      return;
+    }
+    patientsCache = Array.isArray(list) ? [...list] : [];
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Doc</th>
+          <th>Teléfono</th>
+          <th>Dirección</th>
+          <th>UserID</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.id ?? "-"}</td>
+        <td>${p.document_type || "-"} ${p.document_number || ""}</td>
+        <td>${p.phone || "-"}</td>
+        <td>${p.address || "-"}</td>
+        <td>${p.user_id ?? "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    patientsOutput.innerHTML = "";
+    patientsOutput.appendChild(table);
+  }
+
+  function fillSelect(selectEl, items, placeholder) {
+    selectEl.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+    items.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.label;
+      selectEl.appendChild(option);
+    });
+  }
+
+  async function loadUsersByRole(roleName, selectEl) {
+    try {
+      const users = await api("/api/users/"); // Asumimos que existe listado para admin
+      const filtered = users
+        .filter(u => (u.role_name || "").toLowerCase() === roleName || u.role_id === (roleName === "doctor" ? 2 : roleName === "patient" ? 3 : 0))
+        .map(u => ({id: u.id, label: `${u.email}${u.first_name ? " – " + u.first_name : ""}${u.last_name ? " " + u.last_name : ""}`}));
+      fillSelect(selectEl, filtered, `Selecciona un usuario ${roleName}`);
+      log(`Usuarios rol ${roleName}`, filtered);
+    } catch (err) {
+      log("Error cargando usuarios", err);
+      alert("No se pudo cargar la lista de usuarios. Verifica que /api/users/ esté disponible para admin.");
+    }
+  }
+
+  async function loadDoctors(selectEl) {
+    try {
+      const doctors = await api("/api/doctors/");
+      const items = doctors.map(d => ({
+        id: d.id,
+        label: `#${d.id} – ${d.specialty || "Especialidad"}${d.user?.email ? " (" + d.user.email + ")" : ""}`
+      }));
+      if (!items.length) {
+        log("Sin perfiles de doctor creados", "Crea primero un perfil en 'Perfil doctor'");
+      }
+      fillSelect(selectEl, items, "Selecciona un doctor");
+    } catch (err) {
+      log("Error cargando doctores", err);
+      // Fallback: usar usuarios con rol doctor si el endpoint no lista
+      try {
+        const users = await api("/api/users/");
+        const filtered = users.filter(u => (u.role_name || "").toLowerCase() === "doctor" || u.role_id === 2)
+          .map(u => ({id: u.id, label: `${u.email}${u.first_name ? " – " + u.first_name : ""}${u.last_name ? " " + u.last_name : ""}`}));
+        fillSelect(selectEl, filtered, "Selecciona un doctor");
+      } catch (_) {
+        // ya se logueó el error principal
+      }
+    }
+  }
+
+  async function loadPatients(selectEl) {
+    try {
+      const patients = await api("/api/patients/");
+      const items = patients.map(p => ({
+        id: p.id,
+        label: `#${p.id} – ${p.document_number || "Paciente"}`
+      }));
+      fillSelect(selectEl, items, "Selecciona un paciente");
+    } catch (err) {
+      log("Error cargando pacientes", err);
+    }
+  }
+
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    localStorage.removeItem("sigchi_token");
+    document.cookie = "access_token=; Max-Age=0; path=/";
+    window.location.href = "/login";
+  });
+
+  document.getElementById("form-user").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = {email: f.get("email"), password: f.get("password"), role_id: Number(f.get("role_id"))};
+    try {
+      showAlert("alert-user", "", "primary");
+      const res = await api("/api/users/", {method: "POST", body: JSON.stringify(body)});
+      log("Usuario creado", res);
+      e.target.reset();
+      showAlert("alert-user", "Usuario creado correctamente", "success");
+      // refrescar combos dependientes
+      loadUsersByRole("doctor", document.querySelector("#form-doctor select[name='user_id']"));
+      loadUsersByRole("patient", document.querySelector("#form-patient select[name='user_id']"));
+    } catch (err) {
+      log("Error crear usuario", err);
+      showAlert("alert-user", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  document.getElementById("form-doctor").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = {user_id: Number(f.get("user_id")), specialty: f.get("specialty")};
+    try {
+      showAlert("alert-doctor", "", "primary");
+      const res = await api("/api/doctors/", {method: "POST", body: JSON.stringify(body)});
+      log("Doctor creado", res);
+      e.target.reset();
+      showAlert("alert-doctor", "Perfil de doctor creado", "success");
+      // refrescar selects de doctores
+      loadDoctors(document.querySelector("#form-appointment select[name='doctor_id']"));
+      // refrescar listado de usuarios doctor por si se requiere
+      loadUsersByRole("doctor", document.querySelector("#form-doctor select[name='user_id']"));
+      refreshDoctors();
+    } catch (err) {
+      log("Error doctor", err);
+      showAlert("alert-doctor", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  document.getElementById("form-patient").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = {
+      user_id: Number(f.get("user_id")),
+      document_type: f.get("document_type"),
+      document_number: f.get("document_number"),
+      phone: f.get("phone"),
+      address: f.get("address"),
+      birth_date: f.get("birth_date")
+    };
+    try {
+      showAlert("alert-patient", "", "primary");
+      const res = await api("/api/patients/", {method: "POST", body: JSON.stringify(body)});
+      log("Paciente creado", res);
+      e.target.reset();
+      showAlert("alert-patient", "Perfil de paciente creado", "success");
+      // refrescar combos dependientes
+      loadPatients(document.querySelector("#form-appointment select[name='patient_id']"));
+      loadUsersByRole("patient", document.querySelector("#form-patient select[name='user_id']"));
+      refreshPatients();
+    } catch (err) {
+      log("Error paciente", err);
+      showAlert("alert-patient", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  document.getElementById("form-appointment").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = {
+      patient_id: Number(f.get("patient_id")),
+      doctor_id: Number(f.get("doctor_id")),
+      scheduled_at: new Date(f.get("scheduled_at")).toISOString(),
+      reason: f.get("reason"),
+      notes: f.get("notes")
+    };
+    try {
+      showAlert("alert-appointment", "", "primary");
+      const res = await api("/api/appointments/", {method: "POST", body: JSON.stringify(body)});
+      log("Cita creada", res);
+      e.target.reset();
+      showAlert("alert-appointment", "Cita creada correctamente", "success");
+      refreshAppointments();
+    } catch (err) {
+      log("Error cita", err);
+      showAlert("alert-appointment", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  document.getElementById("form-edit-doctor").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const id = f.get("doctor_id");
+    const body = {specialty: f.get("specialty")};
+    try {
+      const res = await api(`/api/doctors/${id}`, {method:"PUT", body: JSON.stringify(body)});
+      showAlert("alert-edit-doctor", "Doctor actualizado", "success");
+      refreshDoctors();
+    } catch (err) {
+      showAlert("alert-edit-doctor", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  document.getElementById("form-edit-patient").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const id = f.get("patient_id");
+    const body = {
+      phone: f.get("phone") || undefined,
+      address: f.get("address") || undefined,
+      document_number: f.get("document_number") || undefined,
+    };
+    try {
+      const res = await api(`/api/patients/${id}`, {method:"PUT", body: JSON.stringify(body)});
+      showAlert("alert-edit-patient", "Paciente actualizado", "success");
+      refreshPatients();
+    } catch (err) {
+      showAlert("alert-edit-patient", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  document.getElementById("form-edit-appointment").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const id = f.get("appointment_id");
+    const body = {
+      scheduled_at: f.get("scheduled_at") ? new Date(f.get("scheduled_at")).toISOString() : undefined,
+      status: f.get("status") || undefined,
+      reason: f.get("reason") || undefined,
+      notes: f.get("notes") || undefined,
+    };
+    try {
+      const res = await api(`/api/appointments/${id}`, {method:"PUT", body: JSON.stringify(body)});
+      showAlert("alert-edit-appointment", "Cita actualizada", "success");
+      refreshAppointments();
+    } catch (err) {
+      showAlert("alert-edit-appointment", err?.detail || JSON.stringify(err), "danger");
+    }
+  });
+
+  async function refreshAppointments() {
+    try { appointmentsOutput.textContent = "Cargando..."; const res = await api("/api/appointments/"); renderAppointments(res); fillEditAppointment(res); }
+    catch (err) { appointmentsOutput.textContent = "Error: " + JSON.stringify(err); }
+  }
+
+  async function refreshDoctors() {
+    try { doctorsOutput.textContent = "Cargando..."; const res = await api("/api/doctors/"); renderDoctors(res); fillEditDoctor(res); }
+    catch (err) { doctorsOutput.textContent = "Error: " + JSON.stringify(err); }
+  }
+
+  async function refreshPatients() {
+    try { patientsOutput.textContent = "Cargando..."; const res = await api("/api/patients/"); renderPatients(res); fillEditPatient(res); }
+    catch (err) { patientsOutput.textContent = "Error: " + JSON.stringify(err); }
+  }
+
+  function fillEditDoctor(list = []) {
+    const select = document.querySelector("#form-edit-doctor select[name='doctor_id']");
+    if (!select) return;
+    fillSelect(select, list.map(d => ({id: d.id, label: `#${d.id} - ${d.specialty || "Especialidad"} ${d.user_email ? "(" + d.user_email + ")" : ""}` })), "Selecciona doctor");
+    select.dispatchEvent(new Event("change"));
+  }
+
+  function fillEditPatient(list = []) {
+    const select = document.querySelector("#form-edit-patient select[name='patient_id']");
+    if (!select) return;
+    fillSelect(select, list.map(p => ({id: p.id, label: `#${p.id} - ${p.document_number || p.phone || "Paciente"}`})), "Selecciona paciente");
+    select.dispatchEvent(new Event("change"));
+  }
+
+  function fillEditAppointment(list = []) {
+    const select = document.querySelector("#form-edit-appointment select[name='appointment_id']");
+    if (!select) return;
+    fillSelect(select, list.map(a => ({id: a.id, label: `#${a.id} – ${a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : ""}` })), "Selecciona cita");
+    select.dispatchEvent(new Event("change"));
+  }
+
+  document.querySelector("#form-edit-doctor select[name='doctor_id']")?.addEventListener("change", (e) => {
+    const id = e.target.value;
+    const found = doctorsCache.find(d => String(d.id) === String(id));
+    if (!found) return;
+    document.querySelector("#form-edit-doctor input[name='specialty']").value = found.specialty || "";
+  });
+
+  document.querySelector("#form-edit-patient select[name='patient_id']")?.addEventListener("change", (e) => {
+    const id = e.target.value;
+    const found = patientsCache.find(p => String(p.id) === String(id));
+    if (!found) return;
+    document.querySelector("#form-edit-patient input[name='phone']").value = found.phone || "";
+    document.querySelector("#form-edit-patient input[name='address']").value = found.address || "";
+    document.querySelector("#form-edit-patient input[name='document_number']").value = found.document_number || "";
+  });
+
+  document.querySelector("#form-edit-appointment select[name='appointment_id']")?.addEventListener("change", (e) => {
+    const id = e.target.value;
+    const found = appointmentsCache.find(a => String(a.id) === String(id));
+    if (!found) return;
+    const scheduledInput = document.querySelector("#form-edit-appointment input[name='scheduled_at']");
+    if (found.scheduled_at && scheduledInput) {
+      const dt = new Date(found.scheduled_at);
+      scheduledInput.value = dt.toISOString().slice(0,16);
+    }
+    document.querySelector("#form-edit-appointment select[name='status']").value = found.status || "";
+    document.querySelector("#form-edit-appointment input[name='reason']").value = found.reason || "";
+    document.querySelector("#form-edit-appointment textarea[name='notes']").value = found.notes || "";
+  });
+
+  document.getElementById("btn-refresh-appointments").addEventListener("click", refreshAppointments);
+  document.getElementById("btn-refresh-doctors").addEventListener("click", refreshDoctors);
+  document.getElementById("btn-refresh-patients").addEventListener("click", refreshPatients);
+
+  appointmentsOutput.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action='complete-appointment']");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    btn.disabled = true;
+    try {
+      await api(`/api/appointments/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({status: "completed"})
+      });
+      refreshAppointments();
+    } catch (err) {
+      showAlert("page-alert", err?.detail || "No se pudo marcar la cita", "danger");
+      btn.disabled = false;
+    }
+  });
+
+  // precargar selects para usuarios y citas
+  loadUsersByRole("doctor", document.querySelector("#form-doctor select[name='user_id']"));
+  loadUsersByRole("patient", document.querySelector("#form-patient select[name='user_id']"));
+  loadDoctors(document.querySelector("#form-appointment select[name='doctor_id']"));
+  loadPatients(document.querySelector("#form-appointment select[name='patient_id']"));
+  refreshAppointments();
+  refreshDoctors();
+  refreshPatients();
+
+  ensureAuth();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+</html>

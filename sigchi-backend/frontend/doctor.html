@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGCHI – Doctor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    body { background:#f7fbff; }
+    .card-shadow { box-shadow: 0 12px 32px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+    pre { background:#0f172a; color:#f8fafc; padding:1rem; border-radius:0.5rem; max-height:260px; overflow:auto; }
+  </style>
+</head>
+<body class="pb-5">
+<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm mb-4">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">SIGCHI – Doctor</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge text-bg-success" id="user-pill">Doctor</span>
+      <button class="btn btn-outline-secondary btn-sm" id="btn-logout">Cerrar sesión</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div id="page-alert"></div>
+
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-history">Crear historia clínica</button>
+  </div>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#pane-profile" type="button" role="tab">Perfil</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-appointments" data-bs-toggle="tab" data-bs-target="#pane-appointments" type="button" role="tab">Citas</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-histories" data-bs-toggle="tab" data-bs-target="#pane-histories" type="button" role="tab">Historias</button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="pane-profile" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Mi perfil</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-me">Actualizar</button>
+          </div>
+          <div id="profile" class="small text-secondary">Cargando perfil...</div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="pane-appointments" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Mis citas</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-appointments">Actualizar</button>
+          </div>
+          <div id="appointments-output" class="small text-secondary">Cargando citas...</div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="pane-histories" role="tabpanel">
+      <div class="card card-shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h6 fw-bold mb-0">Mis historias clínicas</h2>
+            <button class="btn btn-sm btn-outline-primary" id="btn-histories">Actualizar</button>
+          </div>
+          <div id="histories-output" class="small text-secondary">Cargando historias...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal historia clínica -->
+<div class="modal fade" id="modal-history" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar cita / historia clínica</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-history"></div>
+        <form id="form-history">
+          <input type="hidden" name="history_id">
+          <div class="mb-2">
+            <label class="form-label">Selecciona cita</label>
+            <select name="appointment_id" class="form-select">
+              <option value="">Selecciona una cita</option>
+            </select>
+            <div class="form-text">Al seleccionar se precarga paciente/doctor y permite editar la historia vinculada.</div>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Paciente</label>
+              <select name="patient_id" class="form-select" required>
+                <option value="">Selecciona un paciente</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Estado</label>
+              <select name="status" class="form-select">
+                <option value="">(sin cambio)</option>
+                <option value="scheduled">Programada</option>
+                <option value="completed">Realizada</option>
+                <option value="cancelled">Cancelada</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="form-label">Doctor</label>
+            <input type="hidden" name="doctor_id">
+            <div class="form-text" id="doctor-info">Cargando tu perfil...</div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Fecha de visita</label>
+              <input type="datetime-local" name="visit_date" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Diagnóstico</label>
+              <input type="text" name="diagnosis" class="form-control" required>
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="form-label">Tratamiento</label>
+            <input type="text" name="treatment" class="form-control" required>
+          </div>
+          <div class="mt-2 mb-3">
+            <label class="form-label">Notas</label>
+            <textarea name="notes" class="form-control" rows="2"></textarea>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Guardar historia</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const profile = document.getElementById("profile");
+  const appointmentsOutput = document.getElementById("appointments-output");
+  const historiesOutput = document.getElementById("histories-output");
+  const selectPatient = document.querySelector("#form-history select[name='patient_id']");
+  const inputDoctorId = document.querySelector("#form-history input[name='doctor_id']");
+  const doctorInfo = document.getElementById("doctor-info");
+  const selectAppointment = document.querySelector("#form-history select[name='appointment_id']");
+  const statusSelect = document.querySelector("#form-history select[name='status']");
+  let currentAppointmentsCache = [];
+
+  function log(title, payload) { console.log(title, payload); }
+
+  function showAlert(targetId, msg, type = "danger") {
+    const slot = document.getElementById(targetId);
+    if (!slot) return;
+    slot.innerHTML = msg
+      ? `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${msg}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+         </div>`
+      : "";
+  }
+
+  function apiBase() { return window.location.origin.replace(/\/$/, ""); }
+  function token() { return localStorage.getItem("sigchi_token"); }
+  function ensureAuth() { if (!token()) window.location.href = "/login"; }
+  function setText(el, data) { el.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2); }
+  function renderProfile(el, data, fields) {
+    if (!data) {
+      el.textContent = "Sin datos.";
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "table table-sm table-borderless mb-0";
+    const tbody = document.createElement("tbody");
+    fields.forEach(([label, key]) => {
+      const tr = document.createElement("tr");
+      const v = data[key] ?? "-";
+      tr.innerHTML = `<th class="text-secondary fw-normal" style="width:160px;">${label}</th><td>${v}</td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.innerHTML = "";
+    el.appendChild(table);
+  }
+  function renderAppointments(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      appointmentsOutput.textContent = "No hay citas.";
+      return;
+    }
+    currentAppointmentsCache = Array.isArray(list) ? [...list] : [];
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr><th>ID</th><th>Paciente</th><th>Fecha</th><th>Estado</th><th>Motivo</th></tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(a => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${a.id ?? "-"}</td>
+        <td>${a.patient_id ?? "-"}</td>
+        <td>${a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : "-"}</td>
+        <td><span class="badge text-bg-${a.status === "cancelled" ? "danger" : a.status === "completed" ? "success" : "warning"}">${a.status || "-"}</span></td>
+        <td>${a.reason || "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    appointmentsOutput.innerHTML = "";
+    appointmentsOutput.appendChild(table);
+    // Rellenar select de citas para historiales
+    const items = list.map(a => ({id: a.id, label: `#${a.id} – ${a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : ""}`}));
+    fillSelect(selectAppointment, items, "Selecciona una cita");
+  }
+
+  function renderHistories(list = []) {
+    if (!Array.isArray(list) || list.length === 0) {
+      historiesOutput.textContent = "No hay historias.";
+      return;
+    }
+    const table = document.createElement("table");
+    table.className = "table table-sm table-striped align-middle mb-0";
+    table.innerHTML = `
+      <thead>
+        <tr><th>ID</th><th>Paciente</th><th>Fecha</th><th>Dx</th><th>Tx</th></tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    list.forEach(h => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${h.id ?? "-"}</td>
+        <td>${h.patient_id ?? "-"}</td>
+        <td>${h.visit_date ? new Date(h.visit_date).toLocaleString() : "-"}</td>
+        <td>${h.diagnosis || "-"}</td>
+        <td>${h.treatment || "-"}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    historiesOutput.innerHTML = "";
+    historiesOutput.appendChild(table);
+  }
+
+  function syncAppointmentSelect(data) {
+    if (!Array.isArray(data)) return;
+    const items = data.map(a => ({id: a.id, label: `#${a.id} – ${a.scheduled_at ? new Date(a.scheduled_at).toLocaleString() : ""}`, data: a}));
+    fillSelect(selectAppointment, items, "Selecciona una cita");
+  }
+  function fillSelect(selectEl, items, placeholder) {
+    selectEl.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = placeholder;
+    selectEl.appendChild(opt);
+    items.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.label;
+      selectEl.appendChild(option);
+    });
+  }
+
+  async function api(path, options = {}) {
+    ensureAuth();
+    const headers = options.headers ? {...options.headers} : {};
+    headers["Authorization"] = "Bearer " + token();
+    if (options.body && !(options.body instanceof FormData)) {
+      headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    }
+    const res = await fetch(apiBase() + path, {...options, headers});
+    let data;
+    try { data = await res.json(); } catch { data = await res.text(); }
+    if (!res.ok) throw data;
+    return data;
+  }
+
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    localStorage.removeItem("sigchi_token");
+    document.cookie = "access_token=; Max-Age=0; path=/";
+    window.location.href = "/login";
+  });
+
+  selectAppointment.addEventListener("change", () => {
+    const selectedId = selectAppointment.value;
+    if (!selectedId || !Array.isArray(currentAppointmentsCache)) return;
+    const found = currentAppointmentsCache.find(a => String(a.id) === String(selectedId));
+    if (!found) return;
+    if (found.patient_id) selectPatient.value = found.patient_id;
+    if (found.status) statusSelect.value = found.status;
+    // copy scheduled date to visit_date
+    if (found.scheduled_at) {
+      const dtlocal = new Date(found.scheduled_at);
+      const isoLocal = dtlocal.toISOString().slice(0,16);
+      document.querySelector("#form-history input[name='visit_date']").value = isoLocal;
+    }
+    const historyInput = document.querySelector("#form-history input[name='history_id']");
+    if (historyInput) historyInput.value = "";
+  });
+
+  document.getElementById("btn-me").addEventListener("click", async () => {
+    try {
+      const res = await api("/api/doctors/me");
+      renderProfile(profile, res, [
+        ["ID", "id"],
+        ["User ID", "user_id"],
+        ["Email", "user_email"],
+        ["Especialidad", "specialty"],
+      ]);
+      log("Perfil", res);
+    } catch (err) {
+      const detail = (err && err.detail) ? err.detail : null;
+      profile.textContent = typeof detail === "string" ? detail : "No se pudo cargar el perfil";
+      showAlert("page-alert", "Error al cargar perfil", "danger");
+    }
+  });
+
+  document.getElementById("btn-appointments").addEventListener("click", async () => {
+    try { const res = await api("/api/appointments/"); renderAppointments(res); syncAppointmentSelect(res); log("Citas", res); }
+    catch (err) { appointmentsOutput.textContent = "Error al cargar citas"; showAlert("page-alert", "Error al cargar citas", "danger"); }
+  });
+
+  document.getElementById("form-history").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = {
+      history_id: f.get("history_id") ? Number(f.get("history_id")) : undefined,
+      appointment_id: f.get("appointment_id") ? Number(f.get("appointment_id")) : null,
+      patient_id: Number(f.get("patient_id")),
+      doctor_id: Number(f.get("doctor_id")),
+      status: f.get("status") || undefined,
+      visit_date: new Date(f.get("visit_date")).toISOString(),
+      diagnosis: f.get("diagnosis"),
+      treatment: f.get("treatment"),
+      notes: f.get("notes")
+    };
+    try {
+      let res;
+      if (body.history_id) {
+        const {history_id, ...rest} = body;
+        res = await api(`/api/histories/${history_id}`, {method:"PUT", body: JSON.stringify(rest)});
+      } else {
+        res = await api("/api/histories/", {method:"POST", body: JSON.stringify(body)});
+      }
+      // actualizar estado de la cita si corresponde
+      if (body.appointment_id && body.status) {
+        await api(`/api/appointments/${body.appointment_id}`, {
+          method: "PUT",
+          body: JSON.stringify({status: body.status})
+        });
+      }
+      log("Historia guardada", res);
+      e.target.reset();
+      showAlert("alert-history", "Historia guardada correctamente", "success");
+      document.getElementById("btn-histories").click();
+      document.getElementById("btn-appointments").click();
+    } catch (err) {
+      log("Error historia", err);
+      showAlert("alert-history", err?.detail || JSON.stringify(err), "danger");
+      return;
+    }
+  });
+
+  document.getElementById("btn-histories").addEventListener("click", async () => {
+    try { const res = await api("/api/histories/"); renderHistories(res); log("Historias", res); }
+    catch (err) { historiesOutput.textContent = "Error al cargar historias"; showAlert("page-alert", "Error al cargar historias", "danger"); }
+  });
+
+  async function loadPatients() {
+    try {
+      const patients = await api("/api/patients/");
+      const items = patients.map(p => ({id: p.id, label: `#${p.id} – ${p.document_number || p.phone || "Paciente"}`}));
+      fillSelect(selectPatient, items, "Selecciona un paciente");
+    } catch (err) { log("Error cargando pacientes", err); }
+  }
+
+  async function loadMyDoctorProfile() {
+    try {
+      const me = await api("/api/doctors/me");
+      inputDoctorId.value = me.id;
+      doctorInfo.textContent = `#${me.id} – ${me.specialty || "Doctor"}${me.user_email ? " (" + me.user_email + ")" : ""}`;
+    } catch (err) { log("Error cargando perfil doctor", err); }
+  }
+
+  ensureAuth();
+  document.getElementById("btn-me").click();
+  document.getElementById("btn-appointments").click();
+  document.getElementById("btn-histories").click();
+  loadPatients();
+  loadMyDoctorProfile();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+</html>
